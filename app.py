@@ -228,6 +228,7 @@ def update_profile():
     phone = request.form.get('phone', '').strip()
     target_study_hours = request.form.get('target_study_hours', '25').strip()
     bio = request.form.get('bio', '').strip()
+    gpa_val = request.form.get('gpa', '').strip()
 
     if not name or not email or not major:
         flash('Name, Email, and Major are required fields.', 'error')
@@ -238,7 +239,14 @@ def update_profile():
     except ValueError:
         target_hours_int = 25
 
-    database.update_student_profile(name, email, major, bio, target_hours_int, phone)
+    gpa_float = None
+    if gpa_val:
+        try:
+            gpa_float = round(float(gpa_val), 2)
+        except ValueError:
+            pass
+
+    database.update_student_profile(name, email, major, bio, target_hours_int, phone, gpa=gpa_float)
     flash('Student profile updated successfully!', 'success')
     return redirect(url_for('profile'))
 

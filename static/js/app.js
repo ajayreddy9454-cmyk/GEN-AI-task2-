@@ -13,18 +13,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebar = document.getElementById('sidebar');
   const sidebarBackdrop = document.getElementById('sidebarBackdrop');
 
+  const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+
   function openSidebar() {
     sidebar?.classList.add('open');
     sidebarBackdrop?.classList.add('show');
+    document.body.style.overflow = 'hidden';
   }
 
   function closeSidebar() {
     sidebar?.classList.remove('open');
     sidebarBackdrop?.classList.remove('show');
+    document.body.style.overflow = '';
   }
 
   if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openSidebar);
+  if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
   if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar);
+
+  document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 992) closeSidebar();
+    });
+  });
 
   // 3. Notification Dropdown Toggle
   const notifToggleBtn = document.getElementById('notifToggleBtn');

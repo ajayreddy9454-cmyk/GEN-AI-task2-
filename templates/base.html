@@ -28,12 +28,17 @@
     <!-- Sidebar Navigation -->
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-header">
-        <div class="brand-icon">
-          <i data-lucide="sparkles" style="width: 22px; height: 22px;"></i>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="brand-icon">
+            <i data-lucide="sparkles" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div class="brand-text">
+            <h1>Student LLM <span class="brand-badge">LMS</span></h1>
+          </div>
         </div>
-        <div class="brand-text">
-          <h1>Student LLM <span class="brand-badge">LMS</span></h1>
-        </div>
+        <button id="sidebarCloseBtn" class="sidebar-close-btn" aria-label="Close sidebar">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
       </div>
 
       <nav class="sidebar-nav">

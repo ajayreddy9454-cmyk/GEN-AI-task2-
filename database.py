@@ -27,7 +27,7 @@ def init_db():
             bio TEXT,
             avatar_url TEXT,
             current_semester TEXT,
-            gpa REAL DEFAULT 3.88,
+            gpa REAL DEFAULT 10.0,
             target_study_hours INTEGER DEFAULT 25,
             phone TEXT,
             academic_standing TEXT DEFAULT "Dean's Honor Roll",
@@ -150,6 +150,14 @@ def init_db():
     if cursor.fetchone()[0] == 0:
         seed_data(conn)
     else:
+        # Automatically migrate existing profile to Ajay Reddy and 10.0 CGPA
+        cursor.execute('''
+            UPDATE student_profile
+            SET name = 'Ajay Reddy', email = 'ajay.reddy@university.edu', gpa = 10.0
+            WHERE name = 'Alex Morgan' OR gpa <= 4.0
+        ''')
+        conn.commit()
+
         # Check if daily_schedule is empty
         cursor.execute('SELECT COUNT(*) FROM daily_schedule')
         if cursor.fetchone()[0] == 0:
@@ -168,14 +176,14 @@ def seed_data(conn):
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
-        'Alex Morgan',
-        'alex.morgan@university.edu',
+        'Ajay Reddy',
+        'ajay.reddy@university.edu',
         'CS-2024-8842',
         'Computer Science & Artificial Intelligence',
         'Senior undergraduate student specializing in machine learning systems, distributed cloud architectures, and scalable web platforms. Preparing for the Spring 2027 Capstone Showcase.',
         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
         'Semester 7 (Senior)',
-        3.88,
+        10.0,
         25,
         '+1 (555) 349-8210',
         "Dean's First Class Honors",
@@ -373,13 +381,20 @@ def get_student_profile():
     conn.close()
     return profile
 
-def update_student_profile(name, email, major, bio, target_study_hours, phone):
+def update_student_profile(name, email, major, bio, target_study_hours, phone, gpa=None):
     conn = get_db_connection()
-    conn.execute('''
-        UPDATE student_profile
-        SET name = ?, email = ?, major = ?, bio = ?, target_study_hours = ?, phone = ?
-        WHERE id = 1
-    ''', (name, email, major, bio, target_study_hours, phone))
+    if gpa is not None:
+        conn.execute('''
+            UPDATE student_profile
+            SET name = ?, email = ?, major = ?, bio = ?, target_study_hours = ?, phone = ?, gpa = ?
+            WHERE id = 1
+        ''', (name, email, major, bio, target_study_hours, phone, gpa))
+    else:
+        conn.execute('''
+            UPDATE student_profile
+            SET name = ?, email = ?, major = ?, bio = ?, target_study_hours = ?, phone = ?
+            WHERE id = 1
+        ''', (name, email, major, bio, target_study_hours, phone))
     conn.commit()
     conn.close()
 

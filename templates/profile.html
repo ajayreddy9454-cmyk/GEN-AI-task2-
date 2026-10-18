@@ -82,9 +82,15 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="target_study_hours">Target Weekly Study Hours</label>
-          <input type="number" name="target_study_hours" id="target_study_hours" class="form-control" value="{{ student['target_study_hours'] }}" min="5" max="60">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="gpa">Cumulative CGPA (Scale of 10.0) *</label>
+            <input type="number" step="0.01" min="0" max="10" name="gpa" id="gpa" class="form-control" value="{{ student['gpa'] }}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="target_study_hours">Target Weekly Study Hours</label>
+            <input type="number" name="target_study_hours" id="target_study_hours" class="form-control" value="{{ student['target_study_hours'] }}" min="5" max="60">
+          </div>
         </div>
 
         <div class="form-group">
@@ -114,8 +120,8 @@
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
         <div style="background-color: var(--bg-app); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1.15rem; text-align: center;">
-          <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Cumulative GPA</div>
-          <div style="font-size: 1.85rem; font-weight: 800; color: var(--primary); margin-top: 0.2rem;">{{ student['gpa'] }} / 4.0</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Cumulative CGPA</div>
+          <div style="font-size: 1.85rem; font-weight: 800; color: var(--primary); margin-top: 0.2rem;">{{ student['gpa'] }} / 10.0</div>
           <span class="badge badge-completed" style="margin-top: 0.4rem; font-size: 0.7rem;">Dean's List (Top 5%)</span>
         </div>
 
