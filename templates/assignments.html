@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block title %}Assignments | Student LLM{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Course Assignments & Deliverables 📝</h1>
+    <p class="page-subtitle">Track project milestones, submit technical reports, and review instructor grades and evaluation feedback.</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="openModal('aiCopilotModal')">
+      <i data-lucide="bot" style="width: 16px; height: 16px;"></i> Ask AI Tutor
+    </button>
+    <button class="btn btn-primary" onclick="openModal('createAssignmentModal')">
+      <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Add New Assignment
+    </button>
+  </div>
+</div>
+
+<!-- Filter & Status Tabs -->
+<div class="filter-toolbar">
+  <div class="filter-pills">
+    <a href="{{ url_for('assignments', status='All', course_id=selected_course, priority=selected_priority, q=search_query) }}" class="filter-pill {% if selected_status == 'All' %}active{% endif %}">
+      All ({{ total_count }})
+    </a>
+    <a href="{{ url_for('assignments', status='Pending', course_id=selected_course, priority=selected_priority, q=search_query) }}" class="filter-pill {% if selected_status == 'Pending' %}active{% endif %}">
+      Pending ({{ pending_count }})
+      {% if overdue_count > 0 %}
+      <span style="display: inline-block; width: 6px; height: 6px; background-color: var(--danger); border-radius: 50%; margin-left: 2px;"></span>
+      {% endif %}
+    </a>
+    <a href="{{ url_for('assignments', status='Submitted', course_id=selected_course, priority=selected_priority, q=search_query) }}" class="filter-pill {% if selected_status == 'Submitted' %}active{% endif %}">
+      Submitted ({{ submitted_count }})
+    </a>
+    <a href="{{ url_for('assignments', status='Completed', course_id=selected_course, priority=selected_priority, q=search_query) }}" class="filter-pill {% if selected_status == 'Completed' %}active{% endif %}">
+      Completed ({{ completed_count }})
+    </a>
+  </div>
+
+  <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+    <!-- Course Filter Dropdown -->
+    <select class="form-control" style="width: auto; padding: 0.45rem 0.8rem; font-size: 0.84rem;" onchange="location = this.value;">
+      <option value="{{ url_for('assignments', status=selected_status, course_id='All', priority=selected_priority, q=search_query) }}" {% if selected_course == 'All' %}selected{% endif %}>
+        All Courses
+      </option>
+      {% for c in courses %}
+      <option value="{{ url_for('assignments', status=selected_status, course_id=c['id'], priority=selected_priority, q=search_query) }}" {% if selected_course == c['id']|string %}selected{% endif %}>
+        {{ c['code'] }} - {{ c['title'] }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <!-- Priority Filter -->
+    <select class="form-control" style="width: auto; padding: 0.45rem 0.8rem; font-size: 0.84rem;" onchange="location = this.value;">
+      <option value="{{ url_for('assignments', status=selected_status, course_id=selected_course, priority='All', q=search_query) }}" {% if selected_priority == 'All' %}selected{% endif %}>
+        All Priorities
+      </option>
+      <option value="{{ url_for('assignments', status=selected_status, course_id=selected_course, priority='High', q=search_query) }}" {% if selected_priority == 'High' %}selected{% endif %}>
+        High Priority
+      </option>
+      <option value="{{ url_for('assignments', status=selected_status, course_id=selected_course, priority='Medium', q=search_query) }}" {% if selected_priority == 'Medium' %}selected{% endif %}>
+        Medium Priority
+      </option>
+      <option value="{{ url_for('assignments', status=selected_status, course_id=selected_course, priority='Low', q=search_query) }}" {% if selected_priority == 'Low' %}selected{% endif %}>
+        Low Priority
+      </option>
+    </select>
+
+    <!-- Search box -->
+    <form action="{{ url_for('assignments') }}" method="GET" class="filter-search-box">
+      <input type="hidden" name="status" value="{{ selected_status }}">
+      <input type="hidden" name="course_id" value="{{ selected_course }}">
+      <input type="hidden" name="priority" value="{{ selected_priority }}">
+      <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+      <input type="text" name="q" value="{{ search_query }}" placeholder="Search assignments..." onchange="this.form.submit()">
+    </form>
+  </div>
+</div>
+
+<!-- Assignments List -->
+{% if assignments %}
+<div class="assignments-list">
+  {% for a in assignments %}
+  {% set is_overdue = (a['status'] == 'Pending' and a['due_date'] < today_str) %}
+  <div class="assignment-item" style="border-left: 4px solid {{ a['color_accent'] or 'var(--primary)' }};">
+    <div class="assignment-main">
+      <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+        <span class="badge" style="background-color: var(--primary-subtle); color: var(--primary); font-size: 0.75rem;">
+          {{ a['course_code'] }}
+        </span>
+        <span class="badge badge-priority-{{ a['priority']|lower }}">
+          {{ a['priority'] }} Priority
+        </span>
+        <span id="assignment-badge-{{ a['id'] }}" class="badge badge-{{ a['status']|lower }}">{{ a['status'] }}</span>
+        
+        {% if is_overdue %}
+        <span class="badge badge-overdue">
+          <i data-lucide="alert-octagon" style="width: 12px; height: 12px;"></i> Overdue
+        </span>
+        {% endif %}
+
+        {% if a['grade'] %}
+        <span class="badge badge-completed" style="font-weight: 700;">
+          <i data-lucide="award" style="width: 12px; height: 12px;"></i> Grade: {{ a['grade'] }}
+        </span>
+        {% endif %}
+      </div>
+
+      <h3 class="assignment-title" style="font-size: 1.05rem;">{{ a['title'] }}</h3>
+      
+      {% if a['description'] %}
+      <p style="font-size: 0.84rem; color: var(--text-body); margin: 0.35rem 0 0.5rem; line-height: 1.45;">
+        {{ a['description'] }}
+      </p>
+      {% endif %}
+
+      <!-- Instructor Feedback Box if present -->
+      {% if a['feedback'] %}
+      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; font-size: 0.8rem; color: #166534; margin: 0.4rem 0 0.6rem;">
+        <strong>Instructor Feedback:</strong> {{ a['feedback'] }}
+      </div>
+      {% endif %}
+
+      <div class="assignment-meta">
+        <span class="meta-due {% if is_overdue %}overdue{% endif %}">
+          <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+          Due: <strong>{{ a['due_date'] }}</strong>
+        </span>
+        <span>
+          <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> {{ a['points'] }} Points Possible
+        </span>
+        {% if a['submitted_at'] %}
+        <span style="color: var(--success); font-weight: 600;">
+          <i data-lucide="check" style="width: 14px; height: 14px;"></i> Submitted: {{ a['submitted_at'] }}
+        </span>
+        {% endif %}
+        {% if a['submission_url'] %}
+        <a href="{{ a['submission_url'] }}" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 600; text-decoration: underline;">
+          <i data-lucide="external-link" style="width: 12px; height: 12px; vertical-align: middle;"></i> View Attached Repo
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="assignment-actions" id="assignment-actions-{{ a['id'] }}">
+      {% if a['status'] == 'Completed' %}
+        <button class="btn btn-secondary btn-sm" onclick="updateAssignmentStatus({{ a['id'] }}, 'Pending')">
+          <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i> Reopen
+        </button>
+      {% else %}
+        <button class="btn btn-primary btn-sm" onclick="updateAssignmentStatus({{ a['id'] }}, 'Completed')">
+          <i data-lucide="check" style="width: 14px; height: 14px;"></i> Mark Completed
+        </button>
+        {% if a['status'] == 'Pending' %}
+        <button class="btn btn-secondary btn-sm" onclick="openSubmissionModal({{ a['id'] }}, '{{ a['title']|replace('\'', '\\\'') }}')">
+          <i data-lucide="upload-cloud" style="width: 14px; height: 14px;"></i> Submit Work
+        </button>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card empty-state">
+  <div class="empty-icon">
+    <i data-lucide="clipboard-check" style="width: 28px; height: 28px;"></i>
+  </div>
+  <h3 class="empty-title">No assignments match your criteria</h3>
+  <p class="empty-description">Try changing your status or priority filter, or clear your search keywords.</p>
+  <div style="margin-top: 1.25rem;">
+    <a href="{{ url_for('assignments') }}" class="btn btn-secondary btn-sm">Reset Filters</a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Create New Assignment Modal -->
+<div id="createAssignmentModal" class="modal-backdrop">
+  <div class="modal-card">
+    <form action="{{ url_for('create_assignment_api') }}" method="POST">
+      <div class="modal-header">
+        <h3>Create New Assignment</h3>
+        <button type="button" class="modal-close-btn" onclick="closeModal('createAssignmentModal')">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="course_id">Course *</label>
+          <select name="course_id" id="course_id" class="form-control" required>
+            <option value="">Select a course...</option>
+            {% for c in courses %}
+            <option value="{{ c['id'] }}">{{ c['code'] }} - {{ c['title'] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="title">Assignment Title *</label>
+          <input type="text" name="title" id="title" class="form-control" placeholder="e.g. Laboratory 4: Graph Search Algorithms" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description">Task Description / Instructions</label>
+          <textarea name="description" id="description" class="form-control" placeholder="Specify deliverables, required tests, and submission formats..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="due_date">Due Date *</label>
+            <input type="date" name="due_date" id="due_date" class="form-control" value="{{ today_str }}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="priority">Priority Level</label>
+            <select name="priority" id="priority" class="form-control">
+              <option value="High">High Priority</option>
+              <option value="Medium" selected>Medium Priority</option>
+              <option value="Low">Low Priority</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="points">Max Possible Points</label>
+          <input type="number" name="points" id="points" class="form-control" value="100" min="10" max="500">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('createAssignmentModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Create Assignment
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

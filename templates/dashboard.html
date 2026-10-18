@@ -1,0 +1,362 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | Student LLM Enterprise Academic Portal{% endblock %}
+
+{% block content %}
+<!-- Executive Academic Banner -->
+<div class="academic-banner">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem;">
+      <span class="badge" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.3);">
+        {{ current_profile['current_semester'] or 'Semester 7' }}
+      </span>
+      <span class="badge" style="background: rgba(16, 185, 129, 0.25); color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.4);">
+        <i data-lucide="check" style="width: 12px; height: 12px;"></i> Good Standing
+      </span>
+    </div>
+    <h1 class="banner-title">Welcome back, {{ current_profile['name'].split()[0] if current_profile else 'Student' }}! 👋</h1>
+    <p class="banner-subtitle">
+      You are enrolled in {{ summary['total_courses'] }} courses for {{ semester_label }}. You have {{ summary['pending_assignments'] }} assignments due, and you've logged {{ summary['weekly_hours'] }} study hours this week.
+    </p>
+  </div>
+
+  <div class="banner-stats">
+    <div class="banner-stat-box">
+      <div class="banner-stat-label">Cumulative GPA</div>
+      <div class="banner-stat-val">{{ current_profile['gpa'] }}</div>
+    </div>
+    <div class="banner-stat-box">
+      <div class="banner-stat-label">Units Completed</div>
+      <div class="banner-stat-val">{{ current_profile['credits_completed'] }}/{{ current_profile['total_credits'] }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4 Top Executive Stat Cards -->
+<div class="summary-grid">
+  <!-- Enrolled Courses -->
+  <div class="stat-card">
+    <div class="stat-icon indigo">
+      <i data-lucide="book-open" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Enrolled Modules</span>
+      <span class="stat-value">{{ summary['total_courses'] }}</span>
+      <span class="stat-subtext" style="color: var(--success);"><i data-lucide="trending-up" style="width: 14px; height: 14px;"></i> 22.0 Credit Units</span>
+    </div>
+  </div>
+
+  <!-- Pending Assignments -->
+  <div class="stat-card">
+    <div class="stat-icon amber">
+      <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Pending Deliverables</span>
+      <span class="stat-value">{{ summary['pending_assignments'] }}</span>
+      <span class="stat-subtext" style="color: {% if summary['overdue_assignments'] > 0 %}var(--danger){% else %}var(--warning){% endif %}; font-weight: 600;">
+        <i data-lucide="alert-triangle" style="width: 14px; height: 14px;"></i> {{ summary['overdue_assignments'] }} overdue
+      </span>
+    </div>
+  </div>
+
+  <!-- Completed Tasks -->
+  <div class="stat-card">
+    <div class="stat-icon emerald">
+      <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Completed Deliverables</span>
+      <span class="stat-value">{{ summary['completed_assignments'] }}</span>
+      <span class="stat-subtext" style="color: var(--success);">
+        <i data-lucide="award" style="width: 14px; height: 14px;"></i> High Grade Avg
+      </span>
+    </div>
+  </div>
+
+  <!-- Overall Progress -->
+  <div class="stat-card">
+    <div class="stat-icon violet">
+      <i data-lucide="bar-chart-3" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Syllabus Completion</span>
+      <span class="stat-value">{{ summary['avg_progress'] }}%</span>
+      <span class="stat-subtext">
+        <i data-lucide="calendar" style="width: 14px; height: 14px;"></i> {{ summary['weekly_hours'] }}h logged / 25h goal
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Main 2-Column Dashboard Grid -->
+<div class="dashboard-grid">
+  <!-- Left Column: Study Chart & Course Progress -->
+  <div class="grid-col">
+    <!-- Weekly Study Progress Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">
+            <i data-lucide="activity" style="color: var(--primary); width: 20px; height: 20px;"></i> Weekly Study Hours & Goal Tracking
+          </h2>
+          <p class="card-subtitle">Daily recorded study time vs {{ summary['weekly_target'] }}h recommended academic benchmark</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <span class="badge badge-submitted">Fall W9</span>
+          <button class="btn btn-secondary btn-sm" onclick="openModal('aiCopilotModal')">
+            <i data-lucide="sparkles" style="width: 13px; height: 13px;"></i> Study Advice
+          </button>
+        </div>
+      </div>
+      <div style="height: 250px; position: relative;">
+        <canvas id="weeklyStudyChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Active Course Progress Modules -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">
+            <i data-lucide="layers" style="color: var(--primary); width: 20px; height: 20px;"></i> Active Course Progress
+          </h2>
+          <p class="card-subtitle">Enrolled curriculum modules and lesson pacing</p>
+        </div>
+        <a href="{{ url_for('courses') }}" style="font-size: 0.82rem; font-weight: 600; color: var(--primary);">
+          View all ({{ courses|length }}) &rarr;
+        </a>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for course in courses[:4] %}
+        <div style="background-color: var(--bg-app); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1.15rem; transition: all 0.2s;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span class="course-code" style="font-size: 0.72rem;">{{ course['code'] }}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">{{ course['credits'] }} Credits &bull; {{ course['level'] }}</span>
+              </div>
+              <h3 style="font-size: 0.98rem; font-weight: 700; color: var(--text-main);">{{ course['title'] }}</h3>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+                {{ course['instructor'] }} &bull; <span style="color: var(--text-body);">{{ course['location'] }}</span>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 1rem; font-weight: 800; color: var(--primary);">{{ course['progress'] }}%</span>
+              <div style="font-size: 0.74rem; color: var(--text-subtle);">{{ course['completed_lessons'] }}/{{ course['total_lessons'] }} lessons</div>
+            </div>
+          </div>
+
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" style="width: {{ course['progress'] }}%; background-color: {{ course['color_accent'] or 'var(--primary)' }};"></div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.6rem;">
+            <button class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.65rem;" onclick="viewCourseSyllabus({{ course['id'] }})">
+              <i data-lucide="book-open" style="width: 12px; height: 12px;"></i> View Syllabus
+            </button>
+            <button class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.65rem; background-color: {{ course['color_accent'] or 'var(--primary)' }};" onclick="incrementLesson({{ course['id'] }}, {{ course['completed_lessons'] }}, {{ course['total_lessons'] }})">
+              <i data-lucide="play" style="width: 12px; height: 12px;"></i> Next Lesson
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Classes Today, Deadlines & Recent Activity -->
+  <div class="grid-col">
+    <!-- Today's Schedule Card -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">
+            <i data-lucide="calendar" style="color: var(--primary); width: 20px; height: 20px;"></i> Today's Schedule
+          </h2>
+          <p class="card-subtitle">Class lectures & live lab sessions</p>
+        </div>
+        <span class="badge badge-submitted">Live</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        {% for item in schedule %}
+        <div class="schedule-item {% if item['is_active'] %}active{% endif %}">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.45rem;">
+              <strong style="font-size: 0.88rem; color: var(--text-main);">{{ item['course_code'] }}</strong>
+              {% if item['is_active'] %}
+              <span class="badge badge-completed" style="font-size: 0.65rem; padding: 0.1rem 0.45rem;">In Progress</span>
+              {% endif %}
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-body); margin-top: 0.15rem;">{{ item['title'] }}</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">
+              <i data-lucide="map-pin" style="width: 11px; height: 11px; vertical-align: middle;"></i> {{ item['room'] }} &bull; {{ item['instructor'] }}
+            </div>
+          </div>
+          <div class="schedule-time-badge">
+            {{ item['start_time'] }} - {{ item['end_time'] }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Upcoming Assignment Deadlines -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">
+            <i data-lucide="calendar-clock" style="color: var(--warning); width: 20px; height: 20px;"></i> Upcoming Deadlines
+          </h2>
+          <p class="card-subtitle">Assignments requiring attention</p>
+        </div>
+        <a href="{{ url_for('assignments') }}" style="font-size: 0.82rem; font-weight: 600; color: var(--primary);">View all &rarr;</a>
+      </div>
+
+      <div class="assignments-list">
+        {% for a in assignments %}
+        <div class="assignment-item" style="padding: 0.85rem 1rem;">
+          <div class="assignment-main">
+            <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem;">
+              <span class="badge badge-priority-{{ a['priority']|lower }}">{{ a['priority'] }}</span>
+              <span class="meta-course" style="font-size: 0.76rem;">{{ a['course_code'] }}</span>
+            </div>
+            <h4 class="assignment-title" style="font-size: 0.88rem;">{{ a['title'] }}</h4>
+            <div class="assignment-meta" style="font-size: 0.75rem;">
+              <span class="meta-due {% if a['status'] == 'Pending' and a['due_date'] < today_str %}overdue{% endif %}">
+                <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
+                Due {{ a['due_date'] }}
+                {% if a['status'] == 'Pending' and a['due_date'] < today_str %}(Overdue){% endif %}
+              </span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;">
+            <span id="assignment-badge-{{ a['id'] }}" class="badge badge-{{ a['status']|lower }}">{{ a['status'] }}</span>
+            {% if a['status'] == 'Pending' %}
+            <button class="btn btn-primary btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.72rem;" onclick="updateAssignmentStatus({{ a['id'] }}, 'Completed')">
+              <i data-lucide="check" style="width: 12px; height: 12px;"></i> Mark Done
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding: 1.5rem 1rem;">
+          <p class="empty-description">No upcoming assignment deadlines found.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Recent Learning Activity -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">
+            <i data-lucide="history" style="color: var(--secondary); width: 20px; height: 20px;"></i> Academic Timeline
+          </h2>
+          <p class="card-subtitle">Real-time audit log of your milestones</p>
+        </div>
+      </div>
+
+      <div class="activity-list">
+        {% for item in activities %}
+        <div class="activity-item">
+          <div class="activity-avatar">
+            <i data-lucide="{{ item['icon_name'] or 'check-circle' }}" style="width: 16px; height: 16px;"></i>
+          </div>
+          <div class="activity-content">
+            <h4 class="activity-title">{{ item['title'] }}</h4>
+            <p class="activity-desc">{{ item['description'] }}</p>
+            <div class="activity-time">
+              <i data-lucide="clock" style="width: 11px; height: 11px; vertical-align: middle;"></i> {{ item['timestamp'] }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // High-performance Chart.js setup with gradient and smooth curves
+  const ctx = document.getElementById('weeklyStudyChart');
+  if (ctx) {
+    const labels = {{ chart_labels | tojson }};
+    const actualData = {{ chart_actual | tojson }};
+    const targetData = {{ chart_target | tojson }};
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Actual Hours',
+            data: actualData,
+            backgroundColor: '#4f46e5',
+            hoverBackgroundColor: '#4338ca',
+            borderRadius: 6,
+            barThickness: 22
+          },
+          {
+            label: 'Target Benchmark (h)',
+            data: targetData,
+            type: 'line',
+            borderColor: '#f59e0b',
+            borderWidth: 2.5,
+            borderDash: [5, 5],
+            pointRadius: 4,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#f59e0b',
+            pointBorderWidth: 2,
+            fill: false,
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              font: { family: 'Plus Jakarta Sans', size: 12, weight: '600' }
+            }
+          },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            padding: 12,
+            titleFont: { family: 'Plus Jakarta Sans', size: 13, weight: '700' },
+            bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
+            cornerRadius: 8
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 8,
+            title: {
+              display: true,
+              text: 'Study Hours',
+              font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }
+            },
+            grid: { color: '#f1f5f9' }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: 'Plus Jakarta Sans', size: 12, weight: '600' } }
+          }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

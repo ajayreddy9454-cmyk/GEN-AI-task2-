@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Learning Resources | Student LLM{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Digital Academic Library 📖</h1>
+    <p class="page-subtitle">Curated collection of verified lecture notes, reference textbooks, quick-lookup cheat sheets, and practical lab repositories.</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="openModal('aiCopilotModal')">
+      <i data-lucide="bot" style="width: 16px; height: 16px;"></i> Ask AI Tutor
+    </button>
+  </div>
+</div>
+
+<!-- Filter Toolbar -->
+<div class="filter-toolbar">
+  <div class="filter-pills">
+    <a href="{{ url_for('resources', category='All', type=selected_type, q=search_query) }}" class="filter-pill {% if selected_category == 'All' %}active{% endif %}">
+      All Categories ({{ resources|length }})
+    </a>
+    {% for cat in categories %}
+    <a href="{{ url_for('resources', category=cat, type=selected_type, q=search_query) }}" class="filter-pill {% if selected_category == cat %}active{% endif %}">
+      {{ cat }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+    <!-- Type Filter -->
+    <select class="form-control" style="width: auto; padding: 0.45rem 0.8rem; font-size: 0.84rem;" onchange="location = this.value;">
+      <option value="{{ url_for('resources', category=selected_category, type='All', q=search_query) }}" {% if selected_type == 'All' %}selected{% endif %}>
+        All Formats
+      </option>
+      <option value="{{ url_for('resources', category=selected_category, type='PDF', q=search_query) }}" {% if selected_type == 'PDF' %}selected{% endif %}>
+        PDF Documents
+      </option>
+      <option value="{{ url_for('resources', category=selected_category, type='Notes', q=search_query) }}" {% if selected_type == 'Notes' %}selected{% endif %}>
+        Study Notes
+      </option>
+      <option value="{{ url_for('resources', category=selected_category, type='Lab Code', q=search_query) }}" {% if selected_type == 'Lab Code' %}selected{% endif %}>
+        Lab Code & Repos
+      </option>
+    </select>
+
+    <!-- Search box -->
+    <form action="{{ url_for('resources') }}" method="GET" class="filter-search-box">
+      <input type="hidden" name="category" value="{{ selected_category }}">
+      <input type="hidden" name="type" value="{{ selected_type }}">
+      <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+      <input type="text" name="q" value="{{ search_query }}" placeholder="Search resources or notes..." onchange="this.form.submit()">
+    </form>
+  </div>
+</div>
+
+<!-- Resources Grid -->
+{% if resources %}
+<div class="resources-grid">
+  {% for r in resources %}
+  <div class="resource-card">
+    <div>
+      <div class="resource-top">
+        <div class="resource-type-icon {{ r['resource_type']|lower|replace(' ', '-') }}">
+          {% if 'PDF' in r['resource_type'] %}
+            <i data-lucide="file-text" style="width: 22px; height: 22px;"></i>
+          {% elif 'Lab' in r['resource_type'] or 'Code' in r['resource_type'] %}
+            <i data-lucide="code-2" style="width: 22px; height: 22px;"></i>
+          {% else %}
+            <i data-lucide="book-open" style="width: 22px; height: 22px;"></i>
+          {% endif %}
+        </div>
+        <div style="flex: 1;">
+          <div style="display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.25rem;">
+            <span class="badge" style="background-color: var(--bg-subtle); color: var(--text-muted); font-size: 0.72rem;">
+              {{ r['category'] }}
+            </span>
+            <span class="badge" style="background-color: var(--primary-subtle); color: var(--primary); font-size: 0.7rem; font-weight: 700;">
+              {{ r['difficulty'] }}
+            </span>
+          </div>
+          <h3 class="resource-title">{{ r['title'] }}</h3>
+        </div>
+      </div>
+
+      <div class="resource-meta">
+        {% if r['course_code'] %}
+        <span style="font-weight: 600; color: var(--primary);">{{ r['course_code'] }}</span>
+        <span>&bull;</span>
+        {% endif %}
+        <span>{{ r['resource_type'] }}</span>
+        <span>&bull;</span>
+        <span>{{ r['file_size'] }}</span>
+        <span>&bull;</span>
+        <span>{{ r['read_time'] }}</span>
+      </div>
+
+      <p class="resource-snippet">{{ r['content_snippet'] }}</p>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--border-light);">
+      <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="viewResourceModal('{{ r['title']|replace('\'', '\\\'') }}', '{{ r['category'] }}', '{{ r['resource_type'] }}', '{{ r['read_time'] }}', '{{ r['content_snippet']|replace('\'', '\\\'') }}', '{{ r['external_url'] }}')">
+        <i data-lucide="eye" style="width: 14px; height: 14px;"></i> Preview Notes
+      </button>
+      {% if r['external_url'] %}
+      <a href="{{ r['external_url'] }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" title="Open source documentation">
+        <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card empty-state">
+  <div class="empty-icon">
+    <i data-lucide="folder-search" style="width: 28px; height: 28px;"></i>
+  </div>
+  <h3 class="empty-title">No resources found</h3>
+  <p class="empty-description">Try selecting a different category or clearing search parameters.</p>
+  <div style="margin-top: 1.25rem;">
+    <a href="{{ url_for('resources') }}" class="btn btn-secondary btn-sm">Reset Filters</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

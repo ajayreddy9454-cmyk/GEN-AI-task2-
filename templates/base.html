@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Student LLM - Enterprise Academic Learning Management Platform">
+  <title>{% block title %}Student LLM | Enterprise Academic Platform{% endblock %}</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Design System Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Backdrop for mobile drawer -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">
+          <i data-lucide="sparkles" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div class="brand-text">
+          <h1>Student LLM <span class="brand-badge">LMS</span></h1>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Academic Portal</div>
+        
+        <a href="{{ url_for('dashboard') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" id="nav-dashboard">
+          <i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <a href="{{ url_for('courses') }}" class="nav-link {% if active_page == 'courses' %}active{% endif %}" id="nav-courses">
+          <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
+          <span>My Courses</span>
+          <span class="nav-badge">6</span>
+        </a>
+
+        <a href="{{ url_for('assignments') }}" class="nav-link {% if active_page == 'assignments' %}active{% endif %}" id="nav-assignments">
+          <i data-lucide="check-square" style="width: 18px; height: 18px;"></i>
+          <span>Assignments</span>
+          <span class="nav-badge alert">4</span>
+        </a>
+
+        <a href="{{ url_for('resources') }}" class="nav-link {% if active_page == 'resources' %}active{% endif %}" id="nav-resources">
+          <i data-lucide="folder-git-2" style="width: 18px; height: 18px;"></i>
+          <span>Resources</span>
+        </a>
+
+        <div class="nav-section-title" style="margin-top: 0.75rem;">Account & Profile</div>
+
+        <a href="{{ url_for('profile') }}" class="nav-link {% if active_page == 'profile' %}active{% endif %}" id="nav-profile">
+          <i data-lucide="user" style="width: 18px; height: 18px;"></i>
+          <span>Student Profile</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Footer / Demo Mode -->
+      <div class="sidebar-footer">
+        <div class="demo-mode-card">
+          <div class="demo-mode-badge">
+            <span class="demo-indicator"></span> Demo Active Mode
+          </div>
+          <div class="demo-mode-text">
+            All course and assignment actions persist directly into local SQLite storage.
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+      <!-- Top Sticky Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Toggle navigation">
+            <i data-lucide="menu" style="width: 22px; height: 22px;"></i>
+          </button>
+          
+          <div class="header-term-chip">
+            <i data-lucide="calendar" style="width: 14px; height: 14px; color: var(--primary);"></i>
+            <span>{{ semester_label }} &bull; Week 9</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Global Course Search -->
+          <form action="{{ url_for('courses') }}" method="GET" class="header-search">
+            <i data-lucide="search" class="search-icon" style="width: 16px; height: 16px;"></i>
+            <input type="text" name="q" placeholder="Search courses or topics..." autocomplete="off">
+          </form>
+
+          <!-- Ask Student LLM AI Assistant Button -->
+          <button class="ai-assistant-btn" onclick="openModal('aiCopilotModal')">
+            <i data-lucide="bot" style="width: 16px; height: 16px;"></i>
+            <span>Ask LLM Copilot</span>
+          </button>
+
+          <!-- Notifications Tray Wrapper -->
+          <div class="notification-wrapper">
+            <button id="notifToggleBtn" class="notification-btn" title="Academic notifications">
+              <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+              {% if unread_notif_count > 0 %}
+              <span class="notification-badge"></span>
+              {% endif %}
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div id="notifDropdown" class="notification-dropdown">
+              <div class="notification-dropdown-header">
+                <h4>Notifications ({{ unread_notif_count }} new)</h4>
+                <button class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;" onclick="markAllNotificationsRead()">
+                  Mark read
+                </button>
+              </div>
+              <div class="notification-dropdown-body">
+                {% for n in notifications %}
+                <div class="notif-item {% if n['is_read'] == 0 %}unread{% endif %}">
+                  <div style="margin-top: 2px;">
+                    <i data-lucide="{% if n['category'] == 'alert' %}alert-circle{% elif n['category'] == 'honor' %}award{% else %}info{% endif %}" 
+                       style="width: 16px; height: 16px; color: {% if n['category'] == 'alert' %}var(--danger){% else %}var(--primary){% endif %};"></i>
+                  </div>
+                  <div style="flex: 1;">
+                    <div class="notif-title">{{ n['title'] }}</div>
+                    <div class="notif-desc">{{ n['message'] }}</div>
+                    <div class="notif-time">{{ n['time_ago'] }}</div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <!-- User Widget -->
+          <a href="{{ url_for('profile') }}" class="user-profile-widget" title="View profile">
+            <img src="{{ current_profile['avatar_url'] if current_profile and current_profile['avatar_url'] else 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250' }}" alt="Student Avatar" class="user-avatar">
+            <div class="user-info">
+              <span class="user-name">{{ current_profile['name'] if current_profile else 'Student' }}</span>
+              <span class="user-role">{{ current_profile['academic_standing'] or 'Dean\'s Honors' }}</span>
+            </div>
+            <i data-lucide="chevron-down" style="width: 14px; height: 14px; color: var(--text-subtle);"></i>
+          </a>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <main class="content-body">
+        <!-- Flash Alert Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="flash-alert {{ category }}">
+                  <i data-lucide="{% if category == 'success' %}check-circle{% else %}alert-circle{% endif %}" style="width: 18px; height: 18px;"></i>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <!-- 1. Student LLM AI Copilot Modal -->
+  <div id="aiCopilotModal" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 640px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <div class="brand-icon" style="width: 32px; height: 32px;">
+            <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+          </div>
+          <div>
+            <h3>Student LLM Academic Copilot</h3>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Curriculum Intelligence & Course Companion</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('aiCopilotModal')">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding: 1.25rem;">
+        <!-- Suggested Prompt Chips -->
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem;">
+          <button class="btn btn-secondary btn-sm" style="font-size: 0.75rem; border-radius: 999px;" onclick="askAiAssistant('Explain Transformer Self-Attention formula')">
+            ⚡ Transformer Attention
+          </button>
+          <button class="btn btn-secondary btn-sm" style="font-size: 0.75rem; border-radius: 999px;" onclick="askAiAssistant('Explain Kubernetes Pods and Helm deployments')">
+            ⚡ Kubernetes & Helm
+          </button>
+          <button class="btn btn-secondary btn-sm" style="font-size: 0.75rem; border-radius: 999px;" onclick="askAiAssistant('What are my highest priority assignment deadlines?')">
+            ⚡ Priority Deadlines
+          </button>
+        </div>
+
+        <!-- Chat Bubble View -->
+        <div id="aiChatContainer" style="min-height: 220px; max-height: 320px; overflow-y: auto; background-color: var(--bg-app); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem;">
+          <div style="background: white; border: 1px solid var(--border-light); padding: 0.85rem 1rem; border-radius: 12px 12px 12px 2px; font-size: 0.86rem; color: var(--text-main); margin-bottom: 0.75rem; box-shadow: var(--shadow-xs);">
+            Hello {{ current_profile['name'].split()[0] if current_profile else 'Student' }}! I am your <strong>Student LLM Academic Copilot</strong>. Ask me to break down mathematical formulas, review code concepts, explain database indexing, or summarize upcoming deadlines.
+          </div>
+        </div>
+
+        <!-- Query Form -->
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="text" id="aiQueryInput" class="form-control" placeholder="Ask a course question, concept, or schedule query..." onkeydown="if(event.key === 'Enter') askAiAssistant()">
+          <button class="btn btn-primary" onclick="askAiAssistant()">
+            <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Course Syllabus Detail Modal -->
+  <div id="courseSyllabusModal" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <div>
+          <span class="badge badge-submitted" id="sylCredits" style="margin-bottom: 0.35rem;">Credits</span>
+          <h3 id="sylTitle">Course Syllabus</h3>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('courseSyllabusModal')">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div style="display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.25rem; font-size: 0.84rem; color: var(--text-muted);">
+          <div><i data-lucide="user" style="width: 14px; height: 14px; vertical-align: middle;"></i> Instructor: <strong id="sylInstructor" style="color: var(--text-main);">Instructor</strong></div>
+          <div><i data-lucide="map-pin" style="width: 14px; height: 14px; vertical-align: middle;"></i> Schedule: <strong id="sylLocation" style="color: var(--text-main);">Schedule</strong></div>
+        </div>
+
+        <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Syllabus Modules & Grading Weights:</h4>
+        <div id="sylOutline" style="white-space: pre-line; background-color: var(--bg-subtle); padding: 1.15rem; border-radius: var(--radius-md); font-size: 0.86rem; line-height: 1.6; color: var(--text-body);">
+          Loading syllabus...
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('courseSyllabusModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Assignment Submission Modal -->
+  <div id="assignmentSubmitModal" class="modal-backdrop">
+    <div class="modal-card">
+      <form onsubmit="handleAssignmentSubmit(event)">
+        <input type="hidden" id="subAssignmentId">
+        <div class="modal-header">
+          <h3 id="subModalTitle">Submit Assignment Work</h3>
+          <button type="button" class="modal-close-btn" onclick="closeModal('assignmentSubmitModal')">
+            <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="subUrl">Deliverable Link / GitHub Repository URL</label>
+            <input type="url" id="subUrl" class="form-control" placeholder="https://github.com/username/project-repo">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="subNote">Submission Notes & Technical Summary *</label>
+            <textarea id="subNote" class="form-control" placeholder="Summarize your implementation, key test results, or instructions for the instructor..." required></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('assignmentSubmitModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i data-lucide="send" style="width: 16px; height: 16px;"></i> Submit for Grading
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Resource Detail Modal (Shared) -->
+  <div id="resourceDetailModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span id="resModalCategory" class="badge badge-pending" style="margin-bottom: 0.35rem; display: inline-block;">Category</span>
+          <h3 id="resModalTitle">Resource Title</h3>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('resourceDetailModal')">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+          <span>Format: <strong id="resModalType" style="color: var(--text-main);">PDF</strong></span>
+          <span>Read Time: <strong id="resModalTime" style="color: var(--text-main);">15 min</strong></span>
+        </div>
+        <div style="background-color: var(--bg-subtle); padding: 1.15rem; border-radius: var(--radius-md); font-size: 0.88rem; line-height: 1.6; color: var(--text-body);">
+          <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">Study Notes & Summary:</h4>
+          <p id="resModalSnippet">Content will appear here.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('resourceDetailModal')">Close</button>
+        <a id="resModalExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+          <i data-lucide="external-link" style="width: 16px; height: 16px;"></i> Open Source Document
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

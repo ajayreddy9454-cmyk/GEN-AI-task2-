@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}My Courses | Student LLM{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Curriculum & Enrolled Modules 📚</h1>
+    <p class="page-subtitle">Track your enrolled curriculum, inspect detailed module syllabi, and monitor academic progress.</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="openModal('aiCopilotModal')">
+      <i data-lucide="bot" style="width: 16px; height: 16px;"></i> Ask Course Copilot
+    </button>
+  </div>
+</div>
+
+<!-- Filter & Search Toolbar -->
+<div class="filter-toolbar">
+  <div class="filter-pills">
+    <a href="{{ url_for('courses', category='All', q=search_query) }}" class="filter-pill {% if selected_category == 'All' %}active{% endif %}">
+      All Categories ({{ courses|length }})
+    </a>
+    {% for cat in categories %}
+    <a href="{{ url_for('courses', category=cat, q=search_query) }}" class="filter-pill {% if selected_category == cat %}active{% endif %}">
+      {{ cat }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <form action="{{ url_for('courses') }}" method="GET" class="filter-search-box">
+    <input type="hidden" name="category" value="{{ selected_category }}">
+    <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+    <input type="text" name="q" value="{{ search_query }}" placeholder="Filter by title, code, instructor..." onchange="this.form.submit()">
+  </form>
+</div>
+
+<!-- Courses Grid -->
+{% if courses %}
+<div class="courses-grid">
+  {% for course in courses %}
+  <div class="course-card" style="--course-accent: {{ course['color_accent'] or 'var(--primary)' }};">
+    <div>
+      <div class="course-header">
+        <span class="course-code">{{ course['code'] }}</span>
+        <span class="course-category">{{ course['credits'] }} Units &bull; {{ course['level'] }}</span>
+      </div>
+
+      <h2 class="course-title">{{ course['title'] }}</h2>
+
+      <div class="course-instructor">
+        <i data-lucide="user-check" style="width: 14px; height: 14px; color: var(--primary);"></i>
+        <span>{{ course['instructor'] }}</span>
+        <span style="color: var(--text-subtle);">&bull; {{ course['location'] }}</span>
+      </div>
+
+      <p class="course-desc">{{ course['description'] }}</p>
+    </div>
+
+    <div class="course-footer">
+      <div class="course-stats">
+        <span>Syllabus Completion</span>
+        <span style="color: {{ course['color_accent'] or 'var(--primary)' }}; font-weight: 700;">{{ course['progress'] }}%</span>
+      </div>
+
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" style="width: {{ course['progress'] }}%; background-color: {{ course['color_accent'] or 'var(--primary)' }};"></div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: var(--text-muted); margin-top: 0.5rem;">
+        <span>{{ course['completed_lessons'] }}/{{ course['total_lessons'] }} Lessons Completed</span>
+        <span><i data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle;"></i> {{ course['schedule'].split('-')[0] }}</span>
+      </div>
+
+      <div class="course-actions">
+        <button class="btn btn-primary" style="flex: 1; background-color: {{ course['color_accent'] or 'var(--primary)' }};" onclick="incrementLesson({{ course['id'] }}, {{ course['completed_lessons'] }}, {{ course['total_lessons'] }})">
+          <i data-lucide="play-circle" style="width: 16px; height: 16px;"></i> Continue Learning
+        </button>
+        <button class="btn btn-secondary btn-icon" title="View Detailed Syllabus & Grading Weights" onclick="viewCourseSyllabus({{ course['id'] }})">
+          <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card empty-state">
+  <div class="empty-icon">
+    <i data-lucide="search-x" style="width: 28px; height: 28px;"></i>
+  </div>
+  <h3 class="empty-title">No courses found</h3>
+  <p class="empty-description">We couldn't find any courses matching your filter or query "{{ search_query }}".</p>
+  <div style="margin-top: 1.25rem;">
+    <a href="{{ url_for('courses') }}" class="btn btn-secondary btn-sm">Reset Filters</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
