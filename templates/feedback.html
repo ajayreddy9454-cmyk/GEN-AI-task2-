@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+
+{% block title %}Feedback & Community Reviews | Student LLM Platform{% endblock %}
+
+{% block content %}
+<!-- Executive Feedback Banner -->
+<div class="academic-banner feedback-banner">
+  <div class="banner-main-text">
+    <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+      <span class="badge badge-accent-glow">
+        <i data-lucide="star" style="width: 12px; height: 12px;"></i> Academic & Placement Review Portal
+      </span>
+      <span class="badge badge-success-glow">
+        <i data-lucide="shield-check" style="width: 12px; height: 12px;"></i> Verified Student Community
+      </span>
+    </div>
+    <h1 class="banner-title">Feedback & Academic Reviews ⭐</h1>
+    <p class="banner-subtitle">
+      Share transparent reviews on course curricula, placement drive interviews, faculty mentorship, and campus infrastructure.
+    </p>
+  </div>
+
+  <div class="banner-stats">
+    <div class="banner-stat-box">
+      <div class="banner-stat-label">Community Rating</div>
+      <div class="banner-stat-val text-gradient-gold">{{ stats['avg_rating'] }} <span style="font-size: 0.82rem; opacity: 0.85;">/ 5.0</span></div>
+    </div>
+    <div class="banner-stat-box">
+      <div class="banner-stat-label">Positive Sentiment</div>
+      <div class="banner-stat-val text-gradient-emerald">{{ stats['pct_positive'] }}%</div>
+    </div>
+    <div class="banner-stat-box">
+      <div class="banner-stat-label">Total Reviews</div>
+      <div class="banner-stat-val text-gradient-cyan" id="totalReviewsCounter">{{ stats['total_count'] }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4 Key Stat Metrics Bar -->
+<div class="summary-grid">
+  <div class="stat-card hover-glow">
+    <div class="stat-icon amber">
+      <i data-lucide="star" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Average Star Rating</span>
+      <span class="stat-value text-gradient-gold">{{ stats['avg_rating'] }} / 5.0</span>
+      <span class="stat-subtext" style="color: var(--warning);">
+        <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Across all departments
+      </span>
+    </div>
+  </div>
+
+  <div class="stat-card hover-glow">
+    <div class="stat-icon emerald">
+      <i data-lucide="thumbs-up" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Curriculum Satisfaction</span>
+      <span class="stat-value text-gradient-emerald">{{ stats['curriculum_sat'] }}</span>
+      <span class="stat-subtext" style="color: var(--success);">
+        <i data-lucide="check" style="width: 14px; height: 14px;"></i> PyTorch & Cloud labs
+      </span>
+    </div>
+  </div>
+
+  <div class="stat-card hover-glow">
+    <div class="stat-icon indigo">
+      <i data-lucide="briefcase" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Placement Drive Satisfaction</span>
+      <span class="stat-value text-gradient-cyan">{{ stats['placements_sat'] }}</span>
+      <span class="stat-subtext" style="color: var(--primary);">
+        <i data-lucide="award" style="width: 14px; height: 14px;"></i> Tier-1 Company OAs & Mocks
+      </span>
+    </div>
+  </div>
+
+  <div class="stat-card hover-glow">
+    <div class="stat-icon violet">
+      <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Faculty Guidance Score</span>
+      <span class="stat-value">{{ stats['faculty_sat'] }}</span>
+      <span class="stat-subtext" style="color: var(--secondary);">
+        <i data-lucide="heart" style="width: 14px; height: 14px;"></i> Research & mentorship
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Main 2-Column Layout: Submit Feedback Card (Left) & Feed with Filters (Right) -->
+<div class="dashboard-grid">
+  <!-- Left Column: Submit New Feedback Form Card -->
+  <div class="grid-col">
+    <div class="card feedback-form-card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">
+            <i data-lucide="edit-3" style="color: var(--primary); width: 20px; height: 20px;"></i>
+            Submit Verified Feedback
+          </h2>
+          <p class="card-subtitle">Your constructive feedback directly improves syllabus and drive preparation</p>
+        </div>
+      </div>
+
+      <form onsubmit="handleFeedbackFormSubmit(event)" class="feedback-entry-form">
+        <div class="form-group">
+          <label class="form-label" for="fbCategorySelect">Feedback Category *</label>
+          <select id="fbCategorySelect" class="form-control" required onchange="handleCategoryChange(this.value)">
+            <option value="Course Curriculum">📚 Course Curriculum & Syllabi</option>
+            <option value="Placement & Career Drives">🏢 Placement & Career Drives</option>
+            <option value="Faculty Guidance">👨‍🏫 Faculty Guidance & Mentorship</option>
+            <option value="LMS Platform">💻 Student LLM Platform & AI</option>
+            <option value="Campus Facilities">🏛️ Campus Labs & High-Performance GPUs</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fbTargetName">Course / Company / Faculty Target Name *</label>
+          <input type="text" id="fbTargetName" class="form-control" placeholder="e.g. CS-401 Deep Learning, Google Drive, Dr. Vance" value="CS-401 Deep Learning" required>
+        </div>
+
+        <!-- Interactive 5-Star Rating Selector -->
+        <div class="form-group">
+          <label class="form-label">Your Rating (1 to 5 Stars) *</label>
+          <div class="star-rating-selector" id="starRatingSelector">
+            <input type="hidden" id="fbRatingVal" value="5">
+            <span class="star-btn active" data-val="1" onclick="setFeedbackRating(1)"><i data-lucide="star"></i></span>
+            <span class="star-btn active" data-val="2" onclick="setFeedbackRating(2)"><i data-lucide="star"></i></span>
+            <span class="star-btn active" data-val="3" onclick="setFeedbackRating(3)"><i data-lucide="star"></i></span>
+            <span class="star-btn active" data-val="4" onclick="setFeedbackRating(4)"><i data-lucide="star"></i></span>
+            <span class="star-btn active" data-val="5" onclick="setFeedbackRating(5)"><i data-lucide="star"></i></span>
+            <span id="starRatingText" class="star-rating-label">5.0 - Exceptional Quality</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fbReviewTitle">Review Headline *</label>
+          <input type="text" id="fbReviewTitle" class="form-control" placeholder="e.g. Excellent Transformer Labs and Clear OA Guidance" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fbReviewText">Detailed Review & Constructive Observations *</label>
+          <textarea id="fbReviewText" class="form-control" rows="4" placeholder="Detail specific modules, interview rounds, teaching clarity, or platform improvements..." required></textarea>
+        </div>
+
+        <div class="form-group anonymous-toggle-wrapper">
+          <label class="switch-label" for="fbIsAnonymous">
+            <input type="checkbox" id="fbIsAnonymous">
+            <span class="switch-slider"></span>
+            <span style="font-size: 0.84rem; font-weight: 600; color: var(--text-body);">Publish Anonymously</span>
+          </label>
+          <span style="font-size: 0.74rem; color: var(--text-muted);">Displays as 'Anonymous Student' while maintaining verified student standing.</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary glow-button" style="width: 100%; justify-content: center; margin-top: 0.5rem;">
+          <i data-lucide="send" style="width: 16px; height: 16px;"></i> Publish Review
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Right Column: Filterable Feedback Feed & Community Sentiment -->
+  <div class="grid-col">
+    <!-- Filter Toolbar -->
+    <div class="card" style="padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+      <form action="{{ url_for('feedback') }}" method="GET" class="filter-form" style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <div class="search-input-wrapper" style="flex: 1; min-width: 180px;">
+          <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+          <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search reviews, courses, or companies...">
+        </div>
+
+        <select name="category" class="form-control form-select-sm" onchange="this.form.submit()">
+          <option value="All" {% if selected_category == 'All' %}selected{% endif %}>All Categories</option>
+          <option value="Course Curriculum" {% if selected_category == 'Course Curriculum' %}selected{% endif %}>📚 Course Curriculum</option>
+          <option value="Placement & Career Drives" {% if selected_category == 'Placement & Career Drives' %}selected{% endif %}>🏢 Placement Drives</option>
+          <option value="Faculty Guidance" {% if selected_category == 'Faculty Guidance' %}selected{% endif %}>👨‍🏫 Faculty Guidance</option>
+          <option value="LMS Platform" {% if selected_category == 'LMS Platform' %}selected{% endif %}>💻 LMS Platform</option>
+          <option value="Campus Facilities" {% if selected_category == 'Campus Facilities' %}selected{% endif %}>🏛️ Campus Facilities</option>
+        </select>
+
+        <select name="rating" class="form-control form-select-sm" onchange="this.form.submit()">
+          <option value="All" {% if selected_rating == 'All' %}selected{% endif %}>All Ratings</option>
+          <option value="5" {% if selected_rating == '5' %}selected{% endif %}>⭐⭐⭐⭐⭐ (5 Stars)</option>
+          <option value="4" {% if selected_rating == '4' %}selected{% endif %}>⭐⭐⭐⭐ (4+ Stars)</option>
+        </select>
+
+        {% if selected_category != 'All' or selected_rating != 'All' or search_query %}
+        <a href="{{ url_for('feedback') }}" class="btn btn-secondary btn-sm" title="Clear filters">
+          <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+        </a>
+        {% endif %}
+      </form>
+    </div>
+
+    <!-- Feedback Feed Cards -->
+    <div class="feedback-feed" id="feedbackFeed">
+      {% for fb in feedbacks %}
+      <div class="card feedback-card hover-glow" id="feedback-card-{{ fb['id'] }}">
+        <div class="feedback-card-header">
+          <div style="display: flex; gap: 0.65rem; align-items: center;">
+            <div class="avatar-circle">
+              {{ fb['author_name'][0] }}
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.45rem;">
+                <span class="feedback-author">{{ fb['author_name'] }}</span>
+                {% if not fb['is_anonymous'] %}
+                <span class="badge badge-completed" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">
+                  <i data-lucide="shield-check" style="width: 10px; height: 10px;"></i> Verified Student
+                </span>
+                {% endif %}
+              </div>
+              <div class="feedback-date">{{ fb['created_at'] }}</div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem;">
+            <div class="star-display">
+              {% for star in range(fb['rating']) %}
+                <i data-lucide="star" class="star-icon filled"></i>
+              {% endfor %}
+              {% for star in range(5 - fb['rating']) %}
+                <i data-lucide="star" class="star-icon empty"></i>
+              {% endfor %}
+            </div>
+            <span class="badge badge-accent-glow" style="font-size: 0.7rem;">{{ fb['category'] }}</span>
+          </div>
+        </div>
+
+        <div class="feedback-target-tag">
+          <i data-lucide="tag" style="width: 12px; height: 12px;"></i>
+          <span>Target: <strong>{{ fb['target_name'] }}</strong></span>
+        </div>
+
+        <h3 class="feedback-title">{{ fb['review_title'] }}</h3>
+        <p class="feedback-body">{{ fb['review_text'] }}</p>
+
+        <div class="feedback-card-footer">
+          <button class="helpful-btn" id="upvote-btn-{{ fb['id'] }}" onclick="upvoteFeedback({{ fb['id'] }})">
+            <i data-lucide="thumbs-up" style="width: 14px; height: 14px;"></i>
+            <span>Helpful (<strong id="upvote-count-{{ fb['id'] }}">{{ fb['upvotes'] }}</strong>)</span>
+          </button>
+          <span style="font-size: 0.74rem; color: var(--text-subtle);">
+            Sentiment: <strong style="color: {% if fb['sentiment'] == 'Positive' %}var(--success){% else %}var(--warning){% endif %};">{{ fb['sentiment'] }}</strong>
+          </span>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding: 3rem 1.5rem;">
+        <i data-lucide="message-square" style="width: 36px; height: 36px; color: var(--text-subtle); margin-bottom: 0.5rem;"></i>
+        <h3 class="empty-title">No Reviews Found</h3>
+        <p class="empty-description">Be the first to submit a review for this category!</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -32,10 +32,10 @@
   </div>
 </div>
 
-<!-- 4 Top Executive Stat Cards -->
+<!-- 6 Top Executive Stat Cards -->
 <div class="summary-grid">
   <!-- Enrolled Courses -->
-  <div class="stat-card">
+  <div class="stat-card hover-glow">
     <div class="stat-icon indigo">
       <i data-lucide="book-open" style="width: 24px; height: 24px;"></i>
     </div>
@@ -46,8 +46,36 @@
     </div>
   </div>
 
+  <!-- Placement Drives (NEW!) -->
+  <a href="{{ url_for('drives') }}" class="stat-card hover-glow" style="text-decoration: none;">
+    <div class="stat-icon emerald">
+      <i data-lucide="briefcase" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Campus Placement Drives</span>
+      <span class="stat-value text-gradient-gold">{{ placement_stats['total_drives'] }} Active</span>
+      <span class="stat-subtext" style="color: var(--success);">
+        <i data-lucide="award" style="width: 14px; height: 14px;"></i> Top: {{ placement_stats['highest_package'].split('/')[1] or '52 LPA' }}
+      </span>
+    </div>
+  </a>
+
+  <!-- Attendance Regularity (NEW!) -->
+  <a href="{{ url_for('attendance') }}" class="stat-card hover-glow" style="text-decoration: none;">
+    <div class="stat-icon cyan">
+      <i data-lucide="calendar-check" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Lecture Attendance</span>
+      <span class="stat-value text-gradient-emerald">{{ attendance_overview['overall_pct'] }}%</span>
+      <span class="stat-subtext" style="color: var(--info);">
+        <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> +{{ attendance_overview['safe_bunks'] }} Bunks Safe
+      </span>
+    </div>
+  </a>
+
   <!-- Pending Assignments -->
-  <div class="stat-card">
+  <div class="stat-card hover-glow">
     <div class="stat-icon amber">
       <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
     </div>
@@ -61,12 +89,12 @@
   </div>
 
   <!-- Completed Tasks -->
-  <div class="stat-card">
-    <div class="stat-icon emerald">
+  <div class="stat-card hover-glow">
+    <div class="stat-icon rose">
       <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
     </div>
     <div class="stat-content">
-      <span class="stat-label">Completed Deliverables</span>
+      <span class="stat-label">Completed Tasks</span>
       <span class="stat-value">{{ summary['completed_assignments'] }}</span>
       <span class="stat-subtext" style="color: var(--success);">
         <i data-lucide="award" style="width: 14px; height: 14px;"></i> High Grade Avg
@@ -75,7 +103,7 @@
   </div>
 
   <!-- Overall Progress -->
-  <div class="stat-card">
+  <div class="stat-card hover-glow">
     <div class="stat-icon violet">
       <i data-lucide="bar-chart-3" style="width: 24px; height: 24px;"></i>
     </div>
@@ -200,6 +228,74 @@
           </div>
         </div>
         {% endfor %}
+      </div>
+    </div>
+
+    <!-- Placement Hiring Spotlight Widget (NEW!) -->
+    <div class="card hover-glow">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">
+            <i data-lucide="briefcase" style="color: var(--primary); width: 20px; height: 20px;"></i> Placement Drives Spotlight
+          </h2>
+          <p class="card-subtitle">Tier-1 campus recruitment drives hiring now</p>
+        </div>
+        <a href="{{ url_for('drives') }}" style="font-size: 0.82rem; font-weight: 600; color: var(--primary);">View all ({{ placement_stats['total_drives'] }}) &rarr;</a>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+        <div style="background: var(--bg-app); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.75rem 0.9rem; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 0.65rem; align-items: center;">
+            <div class="company-logo-badge" style="width: 34px; height: 34px; font-size: 0.75rem; background: #4285f4;">GOOGL</div>
+            <div>
+              <div style="font-size: 0.86rem; font-weight: 700; color: var(--text-main);">Google Cloud & AI</div>
+              <div style="font-size: 0.74rem; color: var(--text-muted);">$175k / 48 LPA &bull; Nov 15</div>
+            </div>
+          </div>
+          <a href="{{ url_for('drives') }}" class="btn btn-primary btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.72rem;">Apply</a>
+        </div>
+
+        <div style="background: var(--bg-app); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.75rem 0.9rem; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 0.65rem; align-items: center;">
+            <div class="company-logo-badge" style="width: 34px; height: 34px; font-size: 0.75rem; background: #10b981;">NVDA</div>
+            <div>
+              <div style="font-size: 0.86rem; font-weight: 700; color: var(--text-main);">NVIDIA CUDA Systems</div>
+              <div style="font-size: 0.74rem; color: var(--text-muted);">$185k / 52 LPA &bull; Nov 22</div>
+            </div>
+          </div>
+          <a href="{{ url_for('drives') }}" class="btn btn-primary btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.72rem;">Apply</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Quick Gauge Widget (NEW!) -->
+    <div class="card hover-glow">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">
+            <i data-lucide="calendar-check" style="color: var(--success); width: 20px; height: 20px;"></i> Attendance Status
+          </h2>
+          <p class="card-subtitle">Lecture regularity & absence safety</p>
+        </div>
+        <a href="{{ url_for('attendance') }}" style="font-size: 0.82rem; font-weight: 600; color: var(--primary);">Full Ledger &rarr;</a>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.25rem;">
+        <div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--success);" class="text-gradient-emerald">{{ attendance_overview['overall_pct'] }}%</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">{{ attendance_overview['attended_classes'] }}/{{ attendance_overview['total_classes'] }} lectures attended</div>
+          <div style="font-size: 0.75rem; color: var(--info); font-weight: 600; margin-top: 0.35rem;">
+            <i data-lucide="shield-check" style="width: 12px; height: 12px; vertical-align: middle;"></i> +{{ attendance_overview['safe_bunks'] }} safe bunks remaining
+          </div>
+        </div>
+
+        <div class="ring-wrapper">
+          <div class="progress-ring-conic" style="--val: {{ attendance_overview['overall_pct'] }}; --ring-color: #10b981; width: 68px; height: 68px;">
+            <div class="progress-ring-inner" style="width: 52px; height: 52px;">
+              <span class="ring-percentage-num" style="font-size: 0.76rem;">{{ attendance_overview['overall_pct'] }}%</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

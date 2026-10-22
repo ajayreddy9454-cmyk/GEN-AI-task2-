@@ -39,6 +39,24 @@ venv.bak/
 .env.*
 *.env
 !.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# API keys, private keys, certificates, & credentials
+*.pem
+*.key
+*.crt
+*.cert
+*.pfx
+*.p12
+id_rsa*
+id_ed25519*
+*credentials*.json
+*service-account*.json
+*client_secret*.json
+firebase-adminsdk*.json
 
 # Local SQLite databases & instance state
 instance/
@@ -46,10 +64,35 @@ instance/
 *.sqlite
 *.sqlite3
 
-# Logs and runtime databases
+# Node.js dependencies & package manager logs
+node_modules/
+.npm
+.pnpm-store/
+.yarn/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Logs, PIDs, and runtime databases
 *.log
 *.pid
 *.seed
+
+# Testing, coverage, and analysis caches
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Cloud, serverless, and deployment temp artifacts
+.serverless/
+.terraform/
+.aws/
+.gcp/
+.vercel/
+.netlify/
 
 # IDE and Editor settings
 .vscode/

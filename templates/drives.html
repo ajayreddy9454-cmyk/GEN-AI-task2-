@@ -1,0 +1,381 @@
+{% extends 'base.html' %}
+
+{% block title %}Placement Drives & Companies | Student LLM Platform{% endblock %}
+
+{% block content %}
+<!-- Executive Placement Banner -->
+<div class="academic-banner placement-banner">
+  <div class="banner-main-text">
+    <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+      <span class="badge badge-accent-glow">
+        <i data-lucide="sparkles" style="width: 12px; height: 12px;"></i> Tier-1 Campus Recruitment 2026-27
+      </span>
+      <span class="badge badge-success-glow">
+        <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i> 10.0 CGPA Eligible For All Drives
+      </span>
+    </div>
+    <h1 class="banner-title">Companies & Placement Drives 🚀</h1>
+    <p class="banner-subtitle">
+      Explore tier-1 global tech companies, schedule deadlines, interview round breakdowns, and apply directly with one-click credential submission.
+    </p>
+  </div>
+
+  <div class="banner-stats">
+    <div class="banner-stat-box">
+      <div class="banner-stat-label">Highest Package</div>
+      <div class="banner-stat-val text-gradient-gold">{{ stats['highest_package'] }}</div>
+    </div>
+    <div class="banner-stat-box">
+      <div class="banner-stat-label">Batch Avg Package</div>
+      <div class="banner-stat-val">{{ stats['avg_package'] }}</div>
+    </div>
+    <div class="banner-stat-box">
+      <div class="banner-stat-label">Placement Rate</div>
+      <div class="banner-stat-val text-gradient-emerald">{{ stats['placement_rate'] }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4 Key Stat Metrics Bar -->
+<div class="summary-grid">
+  <div class="stat-card hover-glow">
+    <div class="stat-icon indigo">
+      <i data-lucide="building-2" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Total Visiting Companies</span>
+      <span class="stat-value">{{ stats['total_drives'] }}</span>
+      <span class="stat-subtext" style="color: var(--primary);">
+        <i data-lucide="briefcase" style="width: 14px; height: 14px;"></i> 8 Global Tech Giants
+      </span>
+    </div>
+  </div>
+
+  <div class="stat-card hover-glow">
+    <div class="stat-icon emerald">
+      <i data-lucide="check-circle-2" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Your Active Applications</span>
+      <span class="stat-value">{{ stats['applied_count'] }}</span>
+      <span class="stat-subtext" style="color: var(--success);">
+        <i data-lucide="award" style="width: 14px; height: 14px;"></i> {{ stats['shortlisted_count'] }} Shortlisted
+      </span>
+    </div>
+  </div>
+
+  <div class="stat-card hover-glow">
+    <div class="stat-icon amber">
+      <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Drives Open Now</span>
+      <span class="stat-value">{{ stats['active_drives'] }}</span>
+      <span class="stat-subtext" style="color: var(--warning);">
+        <i data-lucide="clock" style="width: 14px; height: 14px;"></i> Applications in progress
+      </span>
+    </div>
+  </div>
+
+  <div class="stat-card hover-glow">
+    <div class="stat-icon violet">
+      <i data-lucide="target" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Your Eligibility Index</span>
+      <span class="stat-value">100%</span>
+      <span class="stat-subtext" style="color: var(--secondary);">
+        <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> Exceeds all cutoffs (8.8 max)
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Filter & Search Toolbar -->
+<div class="card filter-card">
+  <form action="{{ url_for('drives') }}" method="GET" class="filter-form">
+    <div class="filter-group-main">
+      <div class="search-input-wrapper">
+        <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+        <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search company, job role, tech stack, or location...">
+      </div>
+
+      <div class="filter-selects">
+        <div class="select-wrapper">
+          <label class="sr-only" for="statusFilter">Status</label>
+          <select id="statusFilter" name="status" class="form-control form-select" onchange="this.form.submit()">
+            <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Drive Statuses</option>
+            <option value="Open" {% if selected_status == 'Open' %}selected{% endif %}>🟢 Registration Open</option>
+            <option value="Shortlisted" {% if selected_status == 'Shortlisted' %}selected{% endif %}>⭐ Shortlisted</option>
+            <option value="Applied" {% if selected_status == 'Applied' %}selected{% endif %}>📨 My Applied Drives</option>
+            <option value="Upcoming" {% if selected_status == 'Upcoming' %}selected{% endif %}>⏳ Upcoming Drives</option>
+          </select>
+        </div>
+
+        <div class="select-wrapper">
+          <label class="sr-only" for="roleFilter">Specialization Role</label>
+          <select id="roleFilter" name="role" class="form-control form-select" onchange="this.form.submit()">
+            <option value="All" {% if selected_role == 'All' %}selected{% endif %}>All Tech Domains</option>
+            <option value="Software" {% if selected_role == 'Software' %}selected{% endif %}>Software Engineering (SDE)</option>
+            <option value="Cloud" {% if selected_role == 'Cloud' %}selected{% endif %}>Cloud & Distributed Systems</option>
+            <option value="AI" {% if selected_role == 'AI' %}selected{% endif %}>AI & Machine Intelligence</option>
+            <option value="Quantitative" {% if selected_role == 'Quantitative' %}selected{% endif %}>Quantitative & High-Frequency</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+          <i data-lucide="filter" style="width: 16px; height: 16px;"></i> Filter
+        </button>
+
+        {% if selected_status != 'All' or selected_role != 'All' or search_query %}
+        <a href="{{ url_for('drives') }}" class="btn btn-secondary" title="Clear filters">
+          <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i> Reset
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Companies & Drives Cards Grid -->
+<div class="drives-grid">
+  {% for d in drives %}
+  <div class="card drive-card {% if d['app_status'] == 'Shortlisted' %}border-highlight-emerald{% elif d['app_status'] == 'Applied' %}border-highlight-indigo{% endif %}" id="drive-card-{{ d['id'] }}">
+    <!-- Top Card Header -->
+    <div class="drive-card-header">
+      <div style="display: flex; gap: 0.85rem; align-items: center;">
+        <div class="company-logo-badge" style="background: linear-gradient(135deg, {{ d['logo_color'] }} 0%, #1e1b4b 100%);">
+          {{ d['logo_badge'] }}
+        </div>
+        <div>
+          <div class="drive-company-name">{{ d['company_name'] }}</div>
+          <h3 class="drive-role-title">{{ d['role_title'] }}</h3>
+        </div>
+      </div>
+
+      <div style="text-align: right;">
+        <span class="badge {% if d['app_status'] == 'Shortlisted' %}badge-completed{% elif d['app_status'] == 'Applied' %}badge-submitted{% elif d['status'] == 'Open' %}badge-open{% else %}badge-pending{% endif %}" id="drive-badge-{{ d['id'] }}">
+          {% if d['app_status'] == 'Shortlisted' %}
+            ⭐ Shortlisted
+          {% elif d['app_status'] == 'Applied' %}
+            📨 Applied ({{ d['applied_at'].split()[0] if d['applied_at'] else 'Review' }})
+          {% elif d['status'] == 'Open' %}
+            🟢 Registration Open
+          {% else %}
+            ⏳ {{ d['status'] }}
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    <!-- CTC Package & Location Highlights -->
+    <div class="drive-meta-bar">
+      <div class="ctc-pill">
+        <i data-lucide="wallet" style="width: 15px; height: 15px; color: #f59e0b;"></i>
+        <span><strong>{{ d['package_lpa'] }}</strong></span>
+      </div>
+      <div class="meta-item">
+        <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+        <span>{{ d['location'] }}</span>
+      </div>
+      <div class="meta-item">
+        <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+        <span>Drive: <strong>{{ d['drive_date'] }}</strong></span>
+      </div>
+    </div>
+
+    <!-- Eligibility & Selection Criteria -->
+    <div class="drive-criteria-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+        <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-main);">Eligibility & Cutoff:</span>
+        <span class="eligibility-status-badge eligible">
+          <i data-lucide="check" style="width: 11px; height: 11px;"></i> You are Eligible
+        </span>
+      </div>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-body);">
+        <span class="tag-pill">Min CGPA: <strong>{{ d['min_gpa'] }}</strong></span>
+        <span class="tag-pill">Branches: {{ d['eligible_branches'] }}</span>
+        <span class="tag-pill">Rounds: {{ d['rounds_count'] }} Stages</span>
+      </div>
+    </div>
+
+    <!-- Job Snippet -->
+    <p class="drive-description-snippet">
+      {{ d['job_description'][:165] }}...
+    </p>
+
+    <!-- Selection Stages Pills -->
+    <div class="rounds-preview">
+      <span class="rounds-label">Hiring Stages:</span>
+      <div class="rounds-steps">
+        <span class="step-chip">1. Coding OA</span>
+        <span class="step-arrow">&rarr;</span>
+        <span class="step-chip">2. Tech Round</span>
+        <span class="step-arrow">&rarr;</span>
+        <span class="step-chip">3. System Design</span>
+        <span class="step-arrow">&rarr;</span>
+        <span class="step-chip">4. HR Fit</span>
+      </div>
+    </div>
+
+    <!-- Card Action Buttons -->
+    <div class="drive-card-footer">
+      <button class="btn btn-secondary btn-sm" onclick="openDriveDetailsModal({{ d['id'] }})">
+        <i data-lucide="info" style="width: 14px; height: 14px;"></i> Details & Prep
+      </button>
+
+      {% if d['app_status'] %}
+      <button class="btn btn-success btn-sm" disabled style="opacity: 0.9; cursor: default;">
+        <i data-lucide="check-check" style="width: 14px; height: 14px;"></i> {{ d['app_status'] }}
+      </button>
+      {% elif d['status'] == 'Open' %}
+      <button class="btn btn-primary btn-sm glow-button" id="apply-btn-{{ d['id'] }}" onclick="openApplyModal({{ d['id'] }}, '{{ d['company_name'] }}', '{{ d['role_title'] }}', '{{ d['package_lpa'] }}')">
+        <i data-lucide="send" style="width: 14px; height: 14px;"></i> Apply for Drive
+      </button>
+      {% else %}
+      <button class="btn btn-secondary btn-sm" disabled style="opacity: 0.65;">
+        <i data-lucide="clock" style="width: 14px; height: 14px;"></i> Opens {{ d['deadline_date'] }}
+      </button>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state" style="grid-column: 1 / -1; padding: 3rem 1.5rem;">
+    <div class="empty-icon-wrapper">
+      <i data-lucide="briefcase" style="width: 36px; height: 36px; color: var(--text-subtle);"></i>
+    </div>
+    <h3 class="empty-title">No Matching Placement Drives</h3>
+    <p class="empty-description">Try adjusting your search criteria or resetting filters.</p>
+    <a href="{{ url_for('drives') }}" class="btn btn-primary" style="margin-top: 1rem;">View All Drives</a>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- =========================================================================
+     Modals for Drives
+     ========================================================================= -->
+
+<!-- 1. Drive Details & Interview Guide Modal -->
+<div id="driveDetailsModal" class="modal-backdrop">
+  <div class="modal-card modal-lg">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div id="ddLogoBadge" class="company-logo-badge" style="width: 44px; height: 44px; font-size: 1rem;">GOOGL</div>
+        <div>
+          <span id="ddCompany" style="font-size: 0.82rem; font-weight: 700; color: var(--primary);">Company Name</span>
+          <h3 id="ddRoleTitle" style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">Role Title</h3>
+        </div>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('driveDetailsModal')">
+        <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Quick Info Strip -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem;">
+        <div class="stat-mini-box">
+          <span class="stat-mini-label">Compensation</span>
+          <span class="stat-mini-val text-gradient-gold" id="ddPackage">$175,000 / 48 LPA</span>
+        </div>
+        <div class="stat-mini-box">
+          <span class="stat-mini-label">Drive Date</span>
+          <span class="stat-mini-val" id="ddDriveDate">Nov 15, 2026</span>
+        </div>
+        <div class="stat-mini-box">
+          <span class="stat-mini-label">Min CGPA</span>
+          <span class="stat-mini-val" id="ddMinGpa">8.5 / 10.0</span>
+        </div>
+        <div class="stat-mini-box">
+          <span class="stat-mini-label">Location</span>
+          <span class="stat-mini-val" id="ddLocation">Mountain View</span>
+        </div>
+      </div>
+
+      <!-- Job Description -->
+      <h4 style="font-size: 0.92rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-main);">Role Overview & Scope:</h4>
+      <div id="ddDescription" style="font-size: 0.88rem; line-height: 1.6; color: var(--text-body); background: var(--bg-subtle); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+        Job description loading...
+      </div>
+
+      <!-- Selection Process & Syllabus Breakdown -->
+      <h4 style="font-size: 0.92rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-main);">
+        <i data-lucide="layers" style="width: 15px; height: 15px; vertical-align: middle; color: var(--primary);"></i>
+        Interview Rounds & Technical Syllabus Breakdown:
+      </h4>
+      <div id="ddRoundsDetail" style="white-space: pre-line; font-size: 0.86rem; line-height: 1.65; color: var(--text-body); background: var(--bg-app); border: 1px solid var(--border-light); padding: 1.15rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+        Loading rounds...
+      </div>
+
+      <!-- Academic Preparation Recommendation -->
+      <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: var(--radius-md); padding: 0.85rem 1rem; display: flex; gap: 0.75rem; align-items: flex-start;">
+        <i data-lucide="sparkles" style="width: 18px; height: 18px; color: var(--primary); margin-top: 2px;"></i>
+        <div style="font-size: 0.82rem; color: var(--text-body); line-height: 1.5;">
+          <strong>AI Copilot Placement Tip:</strong> Dr. Vance's CS-401 Multi-Head Attention notes and CS-305 Kubernetes Helm deployments are directly applicable for this role. Review them in the <strong>Resources</strong> portal before your assessment.
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('driveDetailsModal')">Close</button>
+      <button class="btn btn-primary" id="ddModalApplyBtn" onclick="triggerApplyFromDetails()">
+        <i data-lucide="send" style="width: 16px; height: 16px;"></i> Apply for Drive
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Apply for Drive Modal -->
+<div id="applyDriveModal" class="modal-backdrop">
+  <div class="modal-card">
+    <form onsubmit="handleDriveApplicationSubmit(event)">
+      <input type="hidden" id="applyDriveId">
+      
+      <div class="modal-header">
+        <div>
+          <span class="badge badge-accent-glow" style="margin-bottom: 0.25rem;">Candidate Application</span>
+          <h3 id="applyModalTitle">Apply to Company</h3>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeModal('applyDriveModal')">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div style="background: var(--bg-subtle); padding: 0.85rem 1rem; border-radius: var(--radius-md); margin-bottom: 1.15rem; font-size: 0.84rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+            <span>Applicant: <strong>{{ current_profile['name'] }}</strong></span>
+            <span>Cumulative CGPA: <strong class="text-gradient-emerald">10.0 / 10.0</strong></span>
+          </div>
+          <div style="color: var(--text-muted); font-size: 0.78rem;">
+            Major: {{ current_profile['major'] }} &bull; Standing: {{ current_profile['academic_standing'] }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="applyResumeUrl">Resume / Portfolio / GitHub Link *</label>
+          <input type="url" id="applyResumeUrl" class="form-control" value="https://github.com/ajay-reddy/portfolio" placeholder="https://github.com/username/resume" required>
+          <span style="font-size: 0.74rem; color: var(--text-muted);">Verified portfolio link with published research and code repositories.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="applyCoverNote">Candidate Statement & Core Strengths *</label>
+          <textarea id="applyCoverNote" class="form-control" rows="3" placeholder="Highlight your expertise in distributed systems, PyTorch LLMs, and high-throughput pipelines..." required>Specialized in distributed deep learning infrastructure, Transformer architectures, and containerized cloud orchestration. Prepared for all technical rounds.</textarea>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem;">
+          <i data-lucide="shield-check" style="width: 14px; height: 14px; color: var(--success);"></i>
+          <span>Official university transcripts will be automatically verified and attached.</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('applyDriveModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary glow-button">
+          <i data-lucide="send" style="width: 16px; height: 16px;"></i> Submit Candidacy
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

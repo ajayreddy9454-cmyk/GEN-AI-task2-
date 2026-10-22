@@ -15,6 +15,8 @@ def inject_global_data():
     today_str = datetime.now().strftime('%Y-%m-%d')
     notifs, unread_count = database.get_notifications()
     schedule = database.get_daily_schedule()
+    placement_stats = database.get_placement_stats()
+    attendance_overview = database.get_attendance_overview()
     return {
         'current_profile': profile,
         'today_str': today_str,
@@ -22,6 +24,8 @@ def inject_global_data():
         'notifications': notifs,
         'unread_notif_count': unread_count,
         'daily_schedule': schedule,
+        'placement_stats': placement_stats,
+        'attendance_overview': attendance_overview,
         'semester_label': 'Fall Semester 2026'
     }
 
@@ -249,6 +253,236 @@ def update_profile():
     database.update_student_profile(name, email, major, bio, target_hours_int, phone, gpa=gpa_float)
     flash('Student profile updated successfully!', 'success')
     return redirect(url_for('profile'))
+
+# ==============================================================================
+# Companies & Placement Drives Routes
+# ==============================================================================
+
+@app.route('/drives')
+def drives():
+    status = request.args.get('status', 'All')
+    role = request.args.get('role', 'All')
+    search = request.args.get('q', '').strip()
+
+    drive_list = database.get_companies_drives(
+        status=status if status != 'All' else None,
+        role=role if role != 'All' else None,
+        search=search or None
+    )
+    stats = database.get_placement_stats()
+
+    return render_template(
+        'drives.html',
+        active_page='drives',
+        drives=drive_list,
+        stats=stats,
+        selected_status=status,
+        selected_role=role,
+        search_query=search
+    )
+
+@app.route('/api/drives/<int:drive_id>')
+def get_drive_api(drive_id):
+    drive = database.get_drive_by_id(drive_id)
+    if not drive:
+        return jsonify({'success': False, 'message': 'Placement drive not found'}), 404
+
+    return jsonify({
+        'success': True,
+        'id': drive['id'],
+        'company_name': drive['company_name'],
+        'logo_badge': drive['logo_badge'],
+        'logo_color': drive['logo_color'],
+        'role_title': drive['role_title'],
+        'package_lpa': drive['package_lpa'],
+        'location': drive['location'],
+        'drive_date': drive['drive_date'],
+        'deadline_date': drive['deadline_date'],
+        'min_gpa': drive['min_gpa'],
+        'eligible_branches': drive['eligible_branches'],
+        'status': drive['status'],
+        'rounds_count': drive['rounds_count'],
+        'rounds_detail': drive['rounds_detail'],
+        'job_description': drive['job_description'],
+        'tags': drive['tags'],
+        'app_status': drive['app_status'],
+        'applied_at': drive['applied_at']
+    })
+
+@app.route('/api/drives/<int:drive_id>/apply', methods=['POST'])
+def apply_drive_api(drive_id):
+    if request.is_json:
+        data = request.get_json() or {}
+        resume_link = data.get('resume_link')
+        cover_note = data.get('cover_note')
+    else:
+        resume_link = request.form.get('resume_link')
+        cover_note = request.form.get('cover_note')
+
+    database.apply_to_drive(drive_id, student_id=1, resume_link=resume_link, cover_note=cover_note)
+
+    if request.is_json:
+        return jsonify({
+            'success': True,
+            'message': 'Application successfully submitted! Placement cell notified.',
+            'status': 'Applied'
+        })
+    flash('Application successfully submitted! Placement cell has received your credentials.', 'success')
+    return redirect(url_for('drives'))
+
+# ==============================================================================
+# Attendance Tracking Routes
+# ==============================================================================
+
+@app.route('/attendance')
+def attendance():
+    course_filter = request.args.get('course_id', 'All')
+    status_filter = request.args.get('status', 'All')
+
+    cid = int(course_filter) if course_filter != 'All' and course_filter.isdigit() else None
+    
+    overview = database.get_attendance_overview()
+    course_details = database.get_course_attendance_details()
+    recent_logs = database.get_recent_attendance_logs(
+        course_id=cid,
+        status=status_filter if status_filter != 'All' else None,
+        limit=50
+    )
+    all_courses = database.get_courses()
+
+    return render_template(
+        'attendance.html',
+        active_page='attendance',
+        overview=overview,
+        course_details=course_details,
+        recent_logs=recent_logs,
+        courses=all_courses,
+        selected_course=course_filter,
+        selected_status=status_filter
+    )
+
+@app.route('/api/attendance/mark', methods=['POST'])
+def mark_attendance_api():
+    if request.is_json:
+        data = request.get_json() or {}
+        course_id = data.get('course_id')
+        status = data.get('status', 'Present')
+        session_topic = data.get('session_topic')
+        remarks = data.get('remarks')
+        session_date = data.get('session_date')
+    else:
+        course_id = request.form.get('course_id')
+        status = request.form.get('status', 'Present')
+        session_topic = request.form.get('session_topic')
+        remarks = request.form.get('remarks')
+        session_date = request.form.get('session_date')
+
+    if not course_id:
+        if request.is_json:
+            return jsonify({'success': False, 'message': 'Course ID is required'}), 400
+        flash('Course selection is required to mark attendance.', 'error')
+        return redirect(url_for('attendance'))
+
+    database.mark_attendance(
+        int(course_id),
+        status=status,
+        session_topic=session_topic or "Live Lecture Session",
+        remarks=remarks,
+        session_date=session_date
+    )
+
+    overview = database.get_attendance_overview()
+
+    if request.is_json:
+        return jsonify({
+            'success': True,
+            'message': f"Attendance successfully recorded as '{status}'!",
+            'overview': overview
+        })
+    flash(f"Attendance recorded as '{status}'!", 'success')
+    return redirect(url_for('attendance'))
+
+# ==============================================================================
+# Feedback & Reviews Hub Routes
+# ==============================================================================
+
+@app.route('/feedback')
+def feedback():
+    category = request.args.get('category', 'All')
+    min_rating = request.args.get('rating', 'All')
+    search = request.args.get('q', '').strip()
+
+    feedback_list = database.get_feedbacks(
+        category=category if category != 'All' else None,
+        min_rating=min_rating if min_rating != 'All' else None,
+        search=search or None
+    )
+    stats = database.get_feedback_stats()
+    courses = database.get_courses()
+
+    return render_template(
+        'feedback.html',
+        active_page='feedback',
+        feedbacks=feedback_list,
+        stats=stats,
+        courses=courses,
+        selected_category=category,
+        selected_rating=min_rating,
+        search_query=search
+    )
+
+@app.route('/api/feedback/submit', methods=['POST'])
+def submit_feedback_api():
+    if request.is_json:
+        data = request.get_json() or {}
+        category = data.get('category')
+        target_name = data.get('target_name')
+        rating = data.get('rating', 5)
+        review_title = data.get('review_title')
+        review_text = data.get('review_text')
+        is_anonymous = 1 if data.get('is_anonymous') else 0
+        sentiment = data.get('sentiment', 'Positive')
+    else:
+        category = request.form.get('category')
+        target_name = request.form.get('target_name')
+        rating = request.form.get('rating', 5)
+        review_title = request.form.get('review_title')
+        review_text = request.form.get('review_text')
+        is_anonymous = 1 if request.form.get('is_anonymous') else 0
+        sentiment = 'Positive' if int(rating) >= 4 else ('Neutral' if int(rating) == 3 else 'Constructive')
+
+    if not category or not target_name or not review_title or not review_text:
+        if request.is_json:
+            return jsonify({'success': False, 'message': 'All review fields are required'}), 400
+        flash('Please fill in all required feedback fields.', 'error')
+        return redirect(url_for('feedback'))
+
+    profile = database.get_student_profile()
+    author_name = profile['name'] if profile else 'Ajay Reddy'
+
+    database.submit_feedback(
+        category=category,
+        target_name=target_name,
+        rating=int(rating),
+        review_title=review_title,
+        review_text=review_text,
+        author_name=author_name,
+        is_anonymous=is_anonymous,
+        sentiment=sentiment
+    )
+
+    if request.is_json:
+        return jsonify({
+            'success': True,
+            'message': 'Your feedback has been published! Thank you for helping improve the academic ecosystem.'
+        })
+    flash('Your review has been successfully published to the community!', 'success')
+    return redirect(url_for('feedback'))
+
+@app.route('/api/feedback/<int:feedback_id>/upvote', methods=['POST'])
+def upvote_feedback_api(feedback_id):
+    new_votes = database.upvote_feedback(feedback_id)
+    return jsonify({'success': True, 'upvotes': new_votes})
 
 @app.route('/api/notifications/read', methods=['POST'])
 def mark_notifications_read_api():

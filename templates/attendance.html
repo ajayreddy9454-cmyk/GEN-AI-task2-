@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance Tracker & Log | Student LLM Platform{% endblock %}
+
+{% block content %}
+<!-- Executive Attendance Banner -->
+<div class="academic-banner attendance-banner">
+  <div class="banner-main-text">
+    <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+      <span class="badge badge-accent-glow">
+        <i data-lucide="calendar-check" style="width: 12px; height: 12px;"></i> Academic Regularity Tracking
+      </span>
+      <span class="badge badge-success-glow">
+        <i data-lucide="shield-check" style="width: 12px; height: 12px;"></i> Minimum 75% Criteria Satisfied
+      </span>
+    </div>
+    <h1 class="banner-title">Attendance & Regularity Tracker ⏱️</h1>
+    <p class="banner-subtitle">
+      Real-time subject-wise lecture attendance, safe absence buffer calculator, and automated class log records synced across all semesters.
+    </p>
+  </div>
+
+  <div class="banner-stats">
+    <div class="banner-stat-box">
+      <div class="banner-stat-label">Overall Aggregate</div>
+      <div class="banner-stat-val text-gradient-emerald" id="bannerOverallPct">{{ overview['overall_pct'] }}%</div>
+    </div>
+    <div class="banner-stat-box">
+      <div class="banner-stat-label">Classes Attended</div>
+      <div class="banner-stat-val" id="bannerClassesCount">{{ overview['attended_classes'] }}/{{ overview['total_classes'] }}</div>
+    </div>
+    <div class="banner-stat-box">
+      <div class="banner-stat-label">Safe Bunk Buffer</div>
+      <div class="banner-stat-val text-gradient-cyan" id="bannerSafeBunks">+{{ overview['safe_bunks'] }} classes</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4 Key Stat Metrics Bar -->
+<div class="summary-grid">
+  <div class="stat-card hover-glow">
+    <div class="stat-icon emerald">
+      <i data-lucide="percent" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Aggregate Attendance</span>
+      <span class="stat-value text-gradient-emerald">{{ overview['overall_pct'] }}%</span>
+      <span class="stat-subtext" style="color: var(--success);">
+        <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i> Safe (Threshold: 75%)
+      </span>
+    </div>
+  </div>
+
+  <div class="stat-card hover-glow">
+    <div class="stat-icon indigo">
+      <i data-lucide="check-circle-2" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Sessions Present</span>
+      <span class="stat-value">{{ overview['attended_classes'] }}</span>
+      <span class="stat-subtext" style="color: var(--primary);">
+        <i data-lucide="layers" style="width: 14px; height: 14px;"></i> Out of {{ overview['total_classes'] }} conducted
+      </span>
+    </div>
+  </div>
+
+  <div class="stat-card hover-glow">
+    <div class="stat-icon amber">
+      <i data-lucide="coffee" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Safe Bunk Buffer</span>
+      <span class="stat-value text-gradient-cyan">+{{ overview['safe_bunks'] }}</span>
+      <span class="stat-subtext" style="color: var(--info);">
+        <i data-lucide="shield" style="width: 14px; height: 14px;"></i> Can miss safely before 75%
+      </span>
+    </div>
+  </div>
+
+  <div class="stat-card hover-glow">
+    <div class="stat-icon rose">
+      <i data-lucide="user-x" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Total Absences</span>
+      <span class="stat-value">{{ overview['absent_classes'] }}</span>
+      <span class="stat-subtext" style="color: var(--text-muted);">
+        <i data-lucide="info" style="width: 14px; height: 14px;"></i> Across 6 enrolled courses
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Header Action Strip: Quick Mark Attendance -->
+<div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.2rem;">
+      <i data-lucide="clock" style="width: 18px; height: 18px; vertical-align: middle; color: var(--primary);"></i>
+      Daily Class Presence Verification
+    </h3>
+    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">
+      Record your presence for today's live lectures or lab practicals to keep your institutional record synchronized.
+    </p>
+  </div>
+  <button class="btn btn-primary glow-button" onclick="openModal('markAttendanceModal')">
+    <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Mark Today's Attendance
+  </button>
+</div>
+
+<!-- Subject-Wise Attendance Cards with Circular Progress Rings -->
+<div class="section-title-wrap" style="margin-bottom: 1rem;">
+  <h2 class="section-title">
+    <i data-lucide="book-open" style="color: var(--primary); width: 20px; height: 20px;"></i>
+    Subject-wise Regularity & Safe Absence Buffer
+  </h2>
+  <span class="section-subtitle">Individual course thresholds and lecture completion pacing</span>
+</div>
+
+<div class="attendance-courses-grid">
+  {% for item in course_details %}
+  <div class="card attendance-card hover-glow" id="attendance-card-{{ item['course_id'] }}">
+    <div class="att-card-top">
+      <div>
+        <span class="course-code" style="font-size: 0.74rem;">{{ item['course_code'] }}</span>
+        <h3 class="att-course-title">{{ item['course_title'] }}</h3>
+        <div class="att-instructor-text">
+          <i data-lucide="user" style="width: 12px; height: 12px; vertical-align: middle;"></i>
+          {{ item['instructor'] }} &bull; {{ item['location'] }}
+        </div>
+      </div>
+
+      <!-- Circular Progress Ring (conic-gradient per modern web guidance) -->
+      <div class="ring-wrapper" title="{{ item['percentage'] }}% attendance">
+        <div class="progress-ring-conic" style="--val: {{ item['percentage'] }}; --ring-color: {% if item['percentage'] >= 85 %}#10b981{% elif item['percentage'] >= 75 %}#f59e0b{% else %}#ef4444{% endif %};">
+          <div class="progress-ring-inner">
+            <span class="ring-percentage-num">{{ item['percentage'] }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Breakdown Numbers -->
+    <div class="att-stats-row">
+      <div class="att-stat-item">
+        <span class="att-stat-label">Conducted</span>
+        <span class="att-stat-num">{{ item['total_classes'] }}</span>
+      </div>
+      <div class="att-stat-item">
+        <span class="att-stat-label">Attended</span>
+        <span class="att-stat-num text-gradient-emerald">{{ item['attended_classes'] }}</span>
+      </div>
+      <div class="att-stat-item">
+        <span class="att-stat-label">Late</span>
+        <span class="att-stat-num">{{ item['late_classes'] }}</span>
+      </div>
+      <div class="att-stat-item">
+        <span class="att-stat-label">Absent</span>
+        <span class="att-stat-num" style="color: {% if item['absent_classes'] > 2 %}var(--danger){% else %}var(--text-subtle){% endif %};">{{ item['absent_classes'] }}</span>
+      </div>
+    </div>
+
+    <!-- Buffer Advice Pill -->
+    <div class="att-advice-pill {% if item['advice_type'] == 'safe' %}safe{% else %}warning{% endif %}">
+      <i data-lucide="{% if item['advice_type'] == 'safe' %}shield-check{% else %}alert-triangle{% endif %}" style="width: 14px; height: 14px;"></i>
+      <span>{{ item['advice'] }}</span>
+    </div>
+
+    <!-- Quick Mark Button -->
+    <div class="att-card-action">
+      <button class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center;" onclick="quickMarkForCourse({{ item['course_id'] }}, '{{ item['course_code'] }}', '{{ item['course_title'] }}')">
+        <i data-lucide="check" style="width: 14px; height: 14px;"></i> Quick Log for {{ item['course_code'] }}
+      </button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Attendance Detailed History Table Section -->
+<div class="card" style="margin-top: 2rem;">
+  <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
+    <div>
+      <h2 class="card-title">
+        <i data-lucide="list-checks" style="color: var(--primary); width: 20px; height: 20px;"></i>
+        Session-by-Session Attendance Ledger
+      </h2>
+      <p class="card-subtitle">Official verified log of student attendance across course modules</p>
+    </div>
+
+    <!-- Filter Form -->
+    <form action="{{ url_for('attendance') }}" method="GET" class="table-filter-form">
+      <select name="course_id" class="form-control form-select-sm" onchange="this.form.submit()">
+        <option value="All" {% if selected_course == 'All' %}selected{% endif %}>All Enrolled Subjects</option>
+        {% for c in courses %}
+        <option value="{{ c['id'] }}" {% if selected_course == c['id']|string %}selected{% endif %}>{{ c['code'] }} &bull; {{ c['title'][:25] }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="status" class="form-control form-select-sm" onchange="this.form.submit()">
+        <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Statuses</option>
+        <option value="Present" {% if selected_status == 'Present' %}selected{% endif %}>🟢 Present Only</option>
+        <option value="Absent" {% if selected_status == 'Absent' %}selected{% endif %}>🔴 Absent Only</option>
+        <option value="Late" {% if selected_status == 'Late' %}selected{% endif %}>🟡 Late Only</option>
+      </select>
+
+      {% if selected_course != 'All' or selected_status != 'All' %}
+      <a href="{{ url_for('attendance') }}" class="btn btn-secondary btn-sm" title="Clear table filters">
+        <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+      </a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Course</th>
+          <th>Curriculum Session Topic</th>
+          <th>Status</th>
+          <th>Instructor Remarks</th>
+        </tr>
+      </thead>
+      <tbody id="attendanceTableBody">
+        {% for log in recent_logs %}
+        <tr>
+          <td style="white-space: nowrap; font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">
+            <i data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle;"></i>
+            {{ log['session_date'] }}
+          </td>
+          <td>
+            <span class="course-code" style="font-size: 0.72rem;">{{ log['course_code'] }}</span>
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-top: 2px;">{{ log['course_title'] }}</div>
+          </td>
+          <td style="font-size: 0.85rem; color: var(--text-body);">
+            {{ log['session_topic'] }}
+          </td>
+          <td>
+            <span class="badge {% if log['status'] == 'Present' %}badge-completed{% elif log['status'] == 'Late' %}badge-submitted{% else %}badge-overdue{% endif %}">
+              {% if log['status'] == 'Present' %}
+                <i data-lucide="check-circle" style="width: 11px; height: 11px;"></i> Present
+              {% elif log['status'] == 'Late' %}
+                <i data-lucide="clock" style="width: 11px; height: 11px;"></i> Late
+              {% else %}
+                <i data-lucide="x-circle" style="width: 11px; height: 11px;"></i> Absent
+              {% endif %}
+            </span>
+          </td>
+          <td style="font-size: 0.8rem; color: var(--text-muted);">
+            {{ log['remarks'] or 'Recorded via academic portal' }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+            No attendance records match the selected filters.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- =========================================================================
+     Mark Attendance Modal
+     ========================================================================= -->
+<div id="markAttendanceModal" class="modal-backdrop">
+  <div class="modal-card">
+    <form onsubmit="handleAttendanceSubmit(event)">
+      <div class="modal-header">
+        <div>
+          <span class="badge badge-accent-glow" style="margin-bottom: 0.25rem;">Attendance Registry</span>
+          <h3 id="markModalTitle">Record Class Attendance</h3>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeModal('markAttendanceModal')">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="attCourseSelect">Select Academic Course *</label>
+          <select id="attCourseSelect" name="course_id" class="form-control" required>
+            <option value="">-- Choose Course --</option>
+            {% for c in courses %}
+            <option value="{{ c['id'] }}">{{ c['code'] }} - {{ c['title'] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label" for="attStatusSelect">Presence Status *</label>
+            <select id="attStatusSelect" name="status" class="form-control" required>
+              <option value="Present" selected>🟢 Present (On Time)</option>
+              <option value="Late">🟡 Late Arrival</option>
+              <option value="Absent">🔴 Absent (Missed Session)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="attDateInput">Session Date *</label>
+            <input type="date" id="attDateInput" name="session_date" class="form-control" value="{{ today_str }}" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="attTopicInput">Lecture / Lab Topic Covered *</label>
+          <input type="text" id="attTopicInput" name="session_topic" class="form-control" placeholder="e.g. Multi-head Attention Layers, Docker Storage..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="attRemarksInput">Remarks / Participation Notes</label>
+          <input type="text" id="attRemarksInput" name="remarks" class="form-control" placeholder="e.g. Attended Turing Hall 402, completed in-class quiz">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('markAttendanceModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary glow-button">
+          <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Confirm & Save Attendance
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

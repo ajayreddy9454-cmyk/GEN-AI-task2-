@@ -143,6 +143,72 @@ def init_db():
         )
     ''')
 
+    # Companies & Placement Drives
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS companies_drives (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            company_name TEXT NOT NULL,
+            logo_badge TEXT NOT NULL,
+            logo_color TEXT DEFAULT '#4f46e5',
+            role_title TEXT NOT NULL,
+            package_lpa TEXT NOT NULL,
+            location TEXT NOT NULL,
+            drive_date TEXT NOT NULL,
+            deadline_date TEXT NOT NULL,
+            min_gpa REAL DEFAULT 8.0,
+            eligible_branches TEXT DEFAULT 'CS, AI, IT, ECE',
+            status TEXT DEFAULT 'Open',
+            rounds_count INTEGER DEFAULT 4,
+            rounds_detail TEXT,
+            job_description TEXT,
+            tags TEXT
+        )
+    ''')
+
+    # Student Drive Applications
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS student_drive_applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            drive_id INTEGER NOT NULL,
+            student_id INTEGER DEFAULT 1,
+            applied_at TEXT NOT NULL,
+            status TEXT DEFAULT 'Applied',
+            resume_link TEXT,
+            cover_note TEXT,
+            FOREIGN KEY (drive_id) REFERENCES companies_drives (id)
+        )
+    ''')
+
+    # Course Attendance Records
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS attendance_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            course_id INTEGER NOT NULL,
+            session_date TEXT NOT NULL,
+            session_topic TEXT NOT NULL,
+            status TEXT NOT NULL,
+            remarks TEXT,
+            FOREIGN KEY (course_id) REFERENCES courses (id)
+        )
+    ''')
+
+    # Student & Placement Feedback
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS feedback_submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL,
+            target_name TEXT NOT NULL,
+            rating INTEGER NOT NULL,
+            review_title TEXT NOT NULL,
+            review_text TEXT NOT NULL,
+            author_name TEXT NOT NULL,
+            is_anonymous INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL,
+            upvotes INTEGER DEFAULT 0,
+            sentiment TEXT DEFAULT 'Positive'
+        )
+    ''')
+
     conn.commit()
 
     # Seed data if empty
@@ -162,6 +228,21 @@ def init_db():
         cursor.execute('SELECT COUNT(*) FROM daily_schedule')
         if cursor.fetchone()[0] == 0:
             seed_additional_data(conn)
+
+    # Check and seed companies_drives
+    cursor.execute('SELECT COUNT(*) FROM companies_drives')
+    if cursor.fetchone()[0] == 0:
+        seed_placement_data(conn)
+
+    # Check and seed attendance_records
+    cursor.execute('SELECT COUNT(*) FROM attendance_records')
+    if cursor.fetchone()[0] == 0:
+        seed_attendance_data(conn)
+
+    # Check and seed feedback_submissions
+    cursor.execute('SELECT COUNT(*) FROM feedback_submissions')
+    if cursor.fetchone()[0] == 0:
+        seed_feedback_data(conn)
 
     conn.close()
 
@@ -373,6 +454,254 @@ def seed_additional_data(conn):
         INSERT INTO notifications (title, message, time_ago, category, is_read)
         VALUES (?, ?, ?, ?, ?)
     ''', notifications)
+
+def seed_placement_data(conn):
+    cursor = conn.cursor()
+    drives = [
+        ('Google', 'GOOGL', '#4285f4', 'Staff Software Engineer - Cloud & AI', '$175,000 / 48 LPA',
+         'Mountain View / Hybrid', '2026-11-15', '2026-11-05', 8.5, 'CS, AI, IT, ECE', 'Open', 4,
+         'Round 1: 90min Online Coding OA (LeetCode Hard Graphs & DP)\nRound 2: Technical Interview 1 (Distributed Algorithms)\nRound 3: System Design (Scalable Pub/Sub Queue)\nRound 4: Googleyness & Leadership Principles',
+         'Join Google Cloud Core Engineering team building next-gen hyperscale infrastructure, Tensor Processing Unit runtime orchestration, and global distributed storage layers.',
+         'Tier-1 Global, Top CTC, High Impact'),
+
+        ('NVIDIA', 'NVDA', '#10b981', 'AI Platform & CUDA Systems Engineer', '$185,000 / 52 LPA',
+         'Santa Clara / Austin', '2026-11-22', '2026-11-10', 8.8, 'CS, AI, ECE', 'Open', 4,
+         'Round 1: Low-level C++ & GPU Compute OA\nRound 2: CUDA Kernel Optimization & Memory Hierarchy\nRound 3: Transformer Serving & TensorRT Benchmarking\nRound 4: Director Systems Architecture Panel',
+         'Architect cutting-edge GPU kernel acceleration for LLM inference clusters. Optimize memory access, NCCL inter-node communications, and TensorRT deployment runtimes.',
+         'Semiconductor, AI Hardware, Elite'),
+
+        ('Microsoft', 'MSFT', '#0284c7', 'Azure Distributed Cloud Engineer', '$155,000 / 42 LPA',
+         'Redmond / Hyderabad', '2026-12-02', '2026-11-20', 8.0, 'CS, AI, IT', 'Shortlisted', 3,
+         'Round 1: Codility Algorithm Assessment\nRound 2: Live Virtual Onsite (Microservices & Concurrency)\nRound 3: Azure Architecture & Hiring Manager Discussion',
+         'Develop mission-critical control planes for Azure Kubernetes Service (AKS), edge compute nodes, and cloud-native state replication across availability zones.',
+         'Cloud Leader, Fortune 50, Hybrid'),
+
+        ('Amazon AWS', 'AWS', '#f59e0b', 'SDE II - Distributed Storage Systems', '$160,000 / 44 LPA',
+         'Seattle / Bangalore', '2026-12-08', '2026-11-25', 8.0, 'CS, AI, IT', 'Applied', 4,
+         'Round 1: HackerRank Coding + AWS Work Style Assessment\nRound 2: Deep Dive Data Structures & B-Trees\nRound 3: Object-Oriented & System Architecture\nRound 4: Amazon Leadership Principles & Bar Raiser',
+         'Engineer exabyte-scale key-value storage primitives, consensus algorithms (Raft/Paxos), and multi-tenant isolation protocols for AWS storage services.',
+         'Tier-1 Global, High Growth, AWS'),
+
+        ('Goldman Sachs', 'GS', '#6366f1', 'Quantitative Technology & High-Frequency Systems', '$165,000 / 45 LPA',
+         'New York / Hybrid', '2026-12-14', '2026-12-01', 8.5, 'CS, AI, Math, Finance', 'Open', 3,
+         'Round 1: Quantitative Probability & Algorithmic Problem Solving\nRound 2: Low-Latency Java/C++ Systems & Memory Profiling\nRound 3: Superday Panel with Senior Trading Strategists',
+         'Build ultra-low latency execution engines, risk simulation pipelines, and automated algorithmic trading platforms operating at sub-millisecond precision.',
+         'FinTech, Wall Street, Elite Package'),
+
+        ('Atlassian', 'ATLS', '#06b6d4', 'Full-Stack Platform Infrastructure Engineer', '$142,000 / 38 LPA',
+         'Remote / Sydney', '2026-12-20', '2026-12-08', 7.8, 'CS, AI, IT, Software', 'Open', 3,
+         'Round 1: HackerRank OA (Data Structures & RESTful Contract Design)\nRound 2: Pair Programming (Building Real-time Collab Feature)\nRound 3: System Architecture & Values Fit',
+         'Design distributed real-time collaboration engines, high-speed GraphQL gateways, and asynchronous event streams powering millions of developers worldwide.',
+         'Work From Anywhere, Developer Tools, Tier-1'),
+
+        ('Adobe', 'ADBE', '#ef4444', 'Generative AI & Creative Cloud Engineer', '$158,000 / 43 LPA',
+         'San Jose / Noida', '2027-01-08', '2026-12-28', 8.2, 'CS, AI, Data Science', 'Upcoming', 4,
+         'Round 1: Computer Vision & Python Algorithmic Test\nRound 2: Diffusion Models & Image Synthesis Lab\nRound 3: Scalable Web Inference Architecture\nRound 4: Engineering Director Interview',
+         'Contribute to Adobe Firefly research, latent diffusion models, neural rendering pipelines, and real-time generative media APIs deployed across Creative Cloud.',
+         'Generative AI, Innovation Lab, High CTC'),
+
+        ('Apple', 'AAPL', '#8b5cf6', 'CoreOS Systems & Machine Intelligence', '$170,000 / 46 LPA',
+         'Cupertino / Hybrid', '2027-01-15', '2027-01-02', 8.7, 'CS, AI, ECE', 'Upcoming', 4,
+         'Round 1: Low-level Systems OA (POSIX Threads, Pointers, Memory)\nRound 2: Operating System Internals & Cache Architecture\nRound 3: CoreML Neural Engine Acceleration\nRound 4: Apple Leadership & Architecture Jury',
+         'Pioneer embedded machine intelligence on Apple Silicon. Optimize unified memory bandwidth, CoreML hardware acceleration, and next-generation operating system primitives.',
+         'Hardware-Software Synergy, Elite Prestige, Silicon Valley')
+    ]
+
+    cursor.executemany('''
+        INSERT INTO companies_drives (
+            company_name, logo_badge, logo_color, role_title, package_lpa,
+            location, drive_date, deadline_date, min_gpa, eligible_branches, status,
+            rounds_count, rounds_detail, job_description, tags
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', drives)
+
+    # Seed initial student drive applications for Ajay Reddy
+    cursor.execute('''
+        INSERT INTO student_drive_applications (drive_id, student_id, applied_at, status, resume_link, cover_note)
+        VALUES (3, 1, '2026-10-15 14:30', 'Shortlisted', 'https://ajayreddy.dev/resume.pdf', 'Applied for Azure Cloud Systems position with strong emphasis on Kubernetes and distributed storage.')
+    ''')
+    cursor.execute('''
+        INSERT INTO student_drive_applications (drive_id, student_id, applied_at, status, resume_link, cover_note)
+        VALUES (4, 1, '2026-10-18 09:15', 'Applied', 'https://ajayreddy.dev/resume.pdf', 'Prepared for AWS SDE II distributed systems role.')
+    ''')
+    conn.commit()
+
+def seed_attendance_data(conn):
+    cursor = conn.cursor()
+    today = datetime.now()
+    attendance_records = []
+    
+    # CS-401 Deep Learning (Course ID: 1) - 24 classes: 22 Present, 1 Late, 1 Absent (95.8%)
+    cs401_topics = [
+        "Introduction to Deep Learning & Perceptrons", "Gradient Descent & Backpropagation Derivatives",
+        "Loss Functions & Cross-Entropy", "Stochastic & Mini-batch Optimization (Adam, RMSProp)",
+        "Vanishing/Exploding Gradients & BatchNorm", "Convolutional Filters & Feature Maps",
+        "ResNet Architecture & Residual Connections", "Data Augmentation & Regularization Strategies",
+        "Recurrent Neural Networks & BPTT", "LSTM & GRU Gating Mechanisms",
+        "Sequence to Sequence & Encoder-Decoder", "Attention Mechanism & Bahdanau Alignment",
+        "Transformer Scaled Dot-Product Attention", "Multi-Head Attention & Positional Encodings",
+        "Transformer Layer Normalization & FFN", "Vision Transformers (ViT) Architecture",
+        "Generative Adversarial Networks (GANs)", "Variational Autoencoders (VAEs)",
+        "Diffusion Models & Denoising Objectives", "Reinforcement Learning with PPO",
+        "PyTorch Model Profiling & GPU Memory", "Distributed Data Parallel (DDP)",
+        "Midterm Lab Exam & Benchmark Review", "Capstone Deep Learning Project Showcase"
+    ]
+    for i, topic in enumerate(cs401_topics):
+        date_str = (today - timedelta(days=(24 - i) * 2 + 1)).strftime('%Y-%m-%d')
+        status = 'Absent' if i == 5 else ('Late' if i == 11 else 'Present')
+        remarks = 'On time' if status == 'Present' else ('Arrived 10 min late' if status == 'Late' else 'Medical leave notice submitted')
+        attendance_records.append((1, date_str, topic, status, remarks))
+
+    # CS-305 Cloud Infrastructure (Course ID: 2) - 20 classes: 18 Present, 2 Absent (90.0%)
+    cs305_topics = [
+        "Linux Virtualization & Cgroups", "Docker Container Images & Multi-stage Builds",
+        "Container Networking & Storage Volumes", "Kubernetes Architecture Overview",
+        "Pods, ReplicaSets, and Deployments", "ClusterIP & NodePort Services",
+        "Kubernetes Ingress Controllers & NGINX", "ConfigMaps & Secrets Encryption",
+        "Persistent Volumes & CSI Drivers", "Helm Chart Templates & Packaging",
+        "Helm Multi-environment Releases", "Horizontal Pod Autoscaler (HPA)",
+        "Terraform Providers & State Management", "AWS VPC & Subnet Automation",
+        "EKS Cluster Provisioning with Terraform", "CI/CD GitHub Actions & Docker Push",
+        "Prometheus Metrics & AlertManager", "Grafana Dashboard Observability",
+        "Distributed Tracing with OpenTelemetry", "Site Reliability Engineering (SRE) Post-Mortems"
+    ]
+    for i, topic in enumerate(cs305_topics):
+        date_str = (today - timedelta(days=(20 - i) * 2 + 2)).strftime('%Y-%m-%d')
+        status = 'Absent' if i in [3, 14] else 'Present'
+        remarks = 'Full participation' if status == 'Present' else 'Missed due to hackathon clash'
+        attendance_records.append((2, date_str, topic, status, remarks))
+
+    # CS-320 Database Systems (Course ID: 3) - 22 classes: 19 Present, 1 Late, 2 Absent (86.4%)
+    cs320_topics = [
+        "Relational Model & Codd's Rules", "Relational Algebra Operators",
+        "Complex SQL Queries & CTEs", "Window Functions & Analytic Partitions",
+        "Schema Design & 1NF to BCNF Normalization", "Storage Engines & Page Layouts",
+        "B-Tree & B+ Tree Indexing Internals", "Hash Indexes & LSM Trees",
+        "Query Parsing & Logical Query Plans", "Cost-Based Query Optimizer & EXPLAIN",
+        "Transaction ACID Properties", "Concurrency Control & 2PL Locking",
+        "Deadlock Detection & Resolution", "Write-Ahead Logging (WAL) & ARIES",
+        "Database Crash Recovery Mechanisms", "Distributed Databases & CAP Theorem",
+        "Consensus Protocols: Two-Phase Commit", "Distributed Sharding & Partition Keys",
+        "NoSQL Document Stores vs Relational", "Benchmark Lab: 5M Row Joins",
+        "PostgreSQL Performance Tuning", "Columnar Stores & Analytical Warehouses"
+    ]
+    for i, topic in enumerate(cs320_topics):
+        date_str = (today - timedelta(days=(22 - i) * 2 + 1)).strftime('%Y-%m-%d')
+        status = 'Absent' if i in [4, 16] else ('Late' if i == 9 else 'Present')
+        remarks = 'Active in lab' if status == 'Present' else ('Traffic delay' if status == 'Late' else 'Excused absence')
+        attendance_records.append((3, date_str, topic, status, remarks))
+
+    # CS-415 Web Architectures (Course ID: 4) - 18 classes: 16 Present, 2 Absent (88.9%)
+    cs415_topics = [
+        "Modern Browser Architecture & Event Loop", "DOM Tree Rendering & Reflow Optimization",
+        "CSS Grid, Flexbox & Responsive Layouts", "JavaScript Engines & V8 Optimization",
+        "Client-side State Management Patterns", "REST API Contract Design & Standards",
+        "GraphQL Schemas, Resolvers & DataLoader", "WebSockets & Real-time Bi-directional Comms",
+        "Browser Security: SOP, CORS, CSP", "Authentication: JWT, Sessions & OAuth2",
+        "OWASP Top 10 Web Vulnerabilities", "Service Workers & Progressive Web Apps",
+        "Performance Audits: Core Web Vitals (LCP, INP)", "Edge Caching & Cloudflare Workers",
+        "Micro-Frontends & Module Federation", "Server-Side Rendering (SSR) vs SSG",
+        "End-to-End Testing with Playwright", "Full-Stack System Design Case Study"
+    ]
+    for i, topic in enumerate(cs415_topics):
+        date_str = (today - timedelta(days=(18 - i) * 2 + 3)).strftime('%Y-%m-%d')
+        status = 'Absent' if i in [2, 11] else 'Present'
+        remarks = 'Engaged' if status == 'Present' else 'Unexcused absence'
+        attendance_records.append((4, date_str, topic, status, remarks))
+
+    # MATH-330 Applied Statistics (Course ID: 5) - 20 classes: 16 Present, 4 Absent (80.0%)
+    math_topics = [
+        "Sample Spaces & Axioms of Probability", "Conditional Probability & Bayes Theorem",
+        "Discrete Random Variables: Binomial, Poisson", "Continuous Variables: Normal, Exponential",
+        "Joint Probability Distributions & Covariance", "Expectation, Variance & Moments",
+        "Central Limit Theorem & Law of Large Numbers", "Parameter Estimation: Method of Moments",
+        "Maximum Likelihood Estimation (MLE)", "Confidence Intervals & Margin of Error",
+        "Hypothesis Testing: Z-test & Student t-test", "P-values, Type I & Type II Errors",
+        "Chi-Square Goodness of Fit Test", "Linear Regression & Ordinary Least Squares",
+        "Multiple Regression & Collinearity", "Bayesian Inference: Prior & Likelihood",
+        "Conjugate Priors: Beta-Binomial Model", "Markov Chains & Transition Matrices",
+        "Stationary Distributions & Ergodicity", "Monte Carlo Simulation Methods"
+    ]
+    for i, topic in enumerate(math_topics):
+        date_str = (today - timedelta(days=(20 - i) * 2 + 1)).strftime('%Y-%m-%d')
+        status = 'Absent' if i in [1, 7, 13, 17] else 'Present'
+        remarks = 'Attended' if status == 'Present' else 'Missed lecture'
+        attendance_records.append((5, date_str, topic, status, remarks))
+
+    # CS-490 Capstone Project (Course ID: 6) - 12 classes: 12 Present (100%)
+    capstone_topics = [
+        "Capstone Proposal & Problem Definition", "Literature Review & Prior Art Analysis",
+        "System Requirements Specification (SRS)", "C4 Architecture Diagrams (Context & Container)",
+        "Sprint 1 Prototype Demo & Faculty Feedback", "Database Schema & API Design Defense",
+        "Sprint 2 Implementation Review", "Integration Testing & Security Audits",
+        "Load Testing & Latency Benchmarks", "Pre-Defense Jury Rehearsal",
+        "User Acceptance Testing & Feedback", "Final Capstone Presentation"
+    ]
+    for i, topic in enumerate(capstone_topics):
+        date_str = (today - timedelta(days=(12 - i) * 4 + 2)).strftime('%Y-%m-%d')
+        status = 'Present'
+        remarks = 'Sprint review completed'
+        attendance_records.append((6, date_str, topic, status, remarks))
+
+    cursor.executemany('''
+        INSERT INTO attendance_records (course_id, session_date, session_topic, status, remarks)
+        VALUES (?, ?, ?, ?, ?)
+    ''', attendance_records)
+    conn.commit()
+
+def seed_feedback_data(conn):
+    cursor = conn.cursor()
+    feedbacks = [
+        ('Course Curriculum', 'CS-401 Deep Learning', 5,
+         'PyTorch Tensor & Self-Attention Labs are World Class',
+         'The curriculum hands-on exercises for building Transformers from scratch gave me immense confidence during company technical interviews. Dr. Vance explains complex backpropagation gradients with unmatched clarity.',
+         'Priya Sharma', 0, '2026-10-18 16:40', 38, 'Positive'),
+
+        ('Placement & Career Drives', 'Google Campus Drive', 5,
+         'System Architecture Mock Interviews Were Invaluable',
+         'The placement cell coordinated with Google engineering alumni to conduct realistic mock interviews. The distributed queues question in Round 3 was identical to what we practiced in our capstone prep sessions.',
+         'Ajay Reddy', 0, '2026-10-19 11:20', 47, 'Positive'),
+
+        ('Faculty Guidance', 'Dr. Katherine Vance', 5,
+         'Incredible mentorship and research office hours',
+         'Dr. Vance always dedicates extra time after hours to review thesis proposals and debugging PyTorch GPU memory leaks. Outstanding academic mentor!',
+         'Marcus Chen', 0, '2026-10-14 09:30', 29, 'Positive'),
+
+        ('Placement & Career Drives', 'NVIDIA Drive Prep', 5,
+         'CUDA & Kernel Profiling preparation material was top-notch',
+         'Really appreciated the high-performance computing cheat sheets provided before the NVIDIA OA. Covered memory coalescence and shared memory caching thoroughly.',
+         'Kavya Patel', 0, '2026-10-16 14:15', 31, 'Positive'),
+
+        ('Course Curriculum', 'CS-305 Cloud DevOps', 4,
+         'Great Kubernetes curriculum, suggest adding more Helm labs',
+         'The Docker and Kubernetes ingress labs are super well designed. It would be awesome if we could have 1 more dedicated session on ArgoCD GitOps pipelines before the final exam.',
+         'David Kim', 0, '2026-10-12 18:05', 18, 'Constructive'),
+
+        ('LMS Platform', 'Student LLM Platform', 5,
+         'Theme customization & AI Academic Copilot is breathtaking',
+         'The new dark themes and instant AI code/math explanations make studying at night an absolute joy. Real-time attendance tracking and drive registration in one place is unmatched.',
+         'Elena Rostova', 0, '2026-10-20 20:10', 54, 'Positive'),
+
+        ('Campus Facilities', 'Innovation Studio 3 & Lab Desktops', 4,
+         'High-end RTX 4090 workstations available for capstone',
+         'Access to local GPU nodes enabled us to train our ResNet and Transformer models without running up huge AWS cloud bills. Lab air conditioning can sometimes be chilly.',
+         'Rahul Verma', 0, '2026-10-10 15:45', 16, 'Positive'),
+
+        ('Placement & Career Drives', 'General Placement Cell', 4,
+         'Resume screening feedback turnaround was under 24 hours',
+         'The career advisors helped align my GitHub repo links and highlighted relevant distributed systems coursework for the upcoming Amazon and Goldman Sachs drives.',
+         'Anonymous Student', 1, '2026-10-15 13:00', 22, 'Positive')
+    ]
+
+    cursor.executemany('''
+        INSERT INTO feedback_submissions (
+            category, target_name, rating, review_title, review_text, author_name,
+            is_anonymous, created_at, upvotes, sentiment
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', feedbacks)
+    conn.commit()
 
 # Helper queries
 def get_student_profile():
@@ -613,3 +942,321 @@ def get_dashboard_summary():
         'weekly_target': round(weekly_target, 1),
         'overdue_assignments': overdue_assignments
     }
+
+# ==============================================================================
+# Companies & Placement Drives Management
+# ==============================================================================
+
+def get_companies_drives(status=None, search=None, role=None):
+    conn = get_db_connection()
+    query = '''
+        SELECT d.*, 
+               (SELECT a.status FROM student_drive_applications a 
+                WHERE a.drive_id = d.id AND a.student_id = 1 LIMIT 1) AS app_status,
+               (SELECT a.applied_at FROM student_drive_applications a 
+                WHERE a.drive_id = d.id AND a.student_id = 1 LIMIT 1) AS applied_at
+        FROM companies_drives d
+        WHERE 1=1
+    '''
+    params = []
+    if status and status != 'All':
+        if status in ['Applied', 'Shortlisted']:
+            query += ' AND d.id IN (SELECT drive_id FROM student_drive_applications WHERE student_id = 1 AND status = ?)'
+            params.append(status)
+        else:
+            query += ' AND d.status = ?'
+            params.append(status)
+    if role and role != 'All':
+        query += ' AND d.role_title LIKE ?'
+        params.append(f'%{role}%')
+    if search:
+        query += ' AND (d.company_name LIKE ? OR d.role_title LIKE ? OR d.tags LIKE ? OR d.location LIKE ?)'
+        sp = f'%{search}%'
+        params.extend([sp, sp, sp, sp])
+
+    query += ' ORDER BY d.drive_date ASC'
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    return rows
+
+def get_drive_by_id(drive_id):
+    conn = get_db_connection()
+    drive = conn.execute('''
+        SELECT d.*, 
+               (SELECT a.status FROM student_drive_applications a 
+                WHERE a.drive_id = d.id AND a.student_id = 1 LIMIT 1) AS app_status,
+               (SELECT a.applied_at FROM student_drive_applications a 
+                WHERE a.drive_id = d.id AND a.student_id = 1 LIMIT 1) AS applied_at,
+               (SELECT a.resume_link FROM student_drive_applications a 
+                WHERE a.drive_id = d.id AND a.student_id = 1 LIMIT 1) AS app_resume
+        FROM companies_drives d
+        WHERE d.id = ?
+    ''', (drive_id,)).fetchone()
+    conn.close()
+    return drive
+
+def apply_to_drive(drive_id, student_id=1, resume_link=None, cover_note=None):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    applied_at = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+    # Check if application already exists
+    existing = cursor.execute('SELECT id FROM student_drive_applications WHERE drive_id = ? AND student_id = ?', (drive_id, student_id)).fetchone()
+    if existing:
+        cursor.execute('''
+            UPDATE student_drive_applications
+            SET applied_at = ?, resume_link = COALESCE(?, resume_link), cover_note = COALESCE(?, cover_note)
+            WHERE id = ?
+        ''', (applied_at, resume_link, cover_note, existing['id']))
+    else:
+        cursor.execute('''
+            INSERT INTO student_drive_applications (drive_id, student_id, applied_at, status, resume_link, cover_note)
+            VALUES (?, ?, ?, 'Applied', ?, ?)
+        ''', (drive_id, student_id, applied_at, resume_link, cover_note))
+
+    # Also log activity
+    drive = cursor.execute('SELECT company_name, role_title FROM companies_drives WHERE id = ?', (drive_id,)).fetchone()
+    if drive:
+        cursor.execute('''
+            INSERT INTO activities (activity_type, title, description, timestamp, icon_name)
+            VALUES (?, ?, ?, ?, ?)
+        ''', ('drive_applied', f"Applied to {drive['company_name']}",
+              f"Submitted candidacy for {drive['role_title']} campus hiring drive.",
+              applied_at, 'briefcase'))
+
+    conn.commit()
+    conn.close()
+    return True
+
+def get_placement_stats():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    total_drives = cursor.execute('SELECT COUNT(*) FROM companies_drives').fetchone()[0]
+    active_drives = cursor.execute("SELECT COUNT(*) FROM companies_drives WHERE status IN ('Open', 'Shortlisted')").fetchone()[0]
+    applied_count = cursor.execute('SELECT COUNT(*) FROM student_drive_applications WHERE student_id = 1').fetchone()[0]
+    shortlisted_count = cursor.execute("SELECT COUNT(*) FROM student_drive_applications WHERE student_id = 1 AND status = 'Shortlisted'").fetchone()[0]
+    conn.close()
+
+    return {
+        'total_drives': total_drives,
+        'active_drives': active_drives,
+        'applied_count': applied_count,
+        'shortlisted_count': shortlisted_count,
+        'highest_package': '$185,000 / 52 LPA',
+        'avg_package': '$161,000 / 44.5 LPA',
+        'placement_rate': '96.4%'
+    }
+
+# ==============================================================================
+# Attendance Management
+# ==============================================================================
+
+def get_attendance_overview():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    total_classes = cursor.execute('SELECT COUNT(*) FROM attendance_records').fetchone()[0]
+    attended_classes = cursor.execute("SELECT COUNT(*) FROM attendance_records WHERE status IN ('Present', 'Late')").fetchone()[0]
+    absent_classes = cursor.execute("SELECT COUNT(*) FROM attendance_records WHERE status = 'Absent'").fetchone()[0]
+
+    overall_pct = round((attended_classes / total_classes * 100), 1) if total_classes > 0 else 0.0
+
+    # Safe bunk calculator (buffer before dropping below 75%)
+    # Let x be absences we can take: (attended) / (total + x) >= 0.75
+    # attended >= 0.75 * total + 0.75 * x => x <= (attended - 0.75 * total) / 0.75
+    safe_bunks = max(0, int((attended_classes - 0.75 * total_classes) / 0.75)) if total_classes > 0 else 0
+
+    conn.close()
+    return {
+        'total_classes': total_classes,
+        'attended_classes': attended_classes,
+        'absent_classes': absent_classes,
+        'overall_pct': overall_pct,
+        'safe_bunks': safe_bunks,
+        'status_standing': 'Safe & Eligible' if overall_pct >= 75.0 else 'Attendance Warning (<75%)'
+    }
+
+def get_course_attendance_details(course_id=None):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    courses_query = 'SELECT * FROM courses'
+    params = []
+    if course_id:
+        courses_query += ' WHERE id = ?'
+        params.append(course_id)
+    courses_query += ' ORDER BY id ASC'
+
+    courses = cursor.execute(courses_query, params).fetchall()
+    details = []
+
+    for c in courses:
+        cid = c['id']
+        total = cursor.execute('SELECT COUNT(*) FROM attendance_records WHERE course_id = ?', (cid,)).fetchone()[0]
+        attended = cursor.execute("SELECT COUNT(*) FROM attendance_records WHERE course_id = ? AND status IN ('Present', 'Late')", (cid,)).fetchone()[0]
+        absent = cursor.execute("SELECT COUNT(*) FROM attendance_records WHERE course_id = ? AND status = 'Absent'", (cid,)).fetchone()[0]
+        late = cursor.execute("SELECT COUNT(*) FROM attendance_records WHERE course_id = ? AND status = 'Late'", (cid,)).fetchone()[0]
+
+        pct = round((attended / total * 100), 1) if total > 0 else 100.0
+
+        # Safe bunks or need-to-attend count
+        if pct >= 75.0:
+            can_miss = max(0, int((attended - 0.75 * total) / 0.75))
+            advice = f"Safe: Can miss {can_miss} more session{'s' if can_miss != 1 else ''}"
+            advice_type = 'safe'
+        else:
+            # Need to attend y consecutive classes: (attended + y) / (total + y) >= 0.75 => y >= 3*total - 4*attended
+            need_attend = max(1, 3 * total - 4 * attended)
+            advice = f"Warning: Must attend next {need_attend} classes"
+            advice_type = 'warning'
+
+        details.append({
+            'course_id': cid,
+            'course_code': c['code'],
+            'course_title': c['title'],
+            'instructor': c['instructor'],
+            'color_accent': c['color_accent'] or '#4f46e5',
+            'schedule': c['schedule'],
+            'location': c['location'],
+            'total_classes': total,
+            'attended_classes': attended,
+            'absent_classes': absent,
+            'late_classes': late,
+            'percentage': pct,
+            'advice': advice,
+            'advice_type': advice_type
+        })
+
+    conn.close()
+    return details
+
+def get_recent_attendance_logs(course_id=None, status=None, limit=40):
+    conn = get_db_connection()
+    query = '''
+        SELECT a.*, c.title AS course_title, c.code AS course_code, c.color_accent
+        FROM attendance_records a
+        JOIN courses c ON a.course_id = c.id
+        WHERE 1=1
+    '''
+    params = []
+    if course_id and course_id != 'All':
+        query += ' AND a.course_id = ?'
+        params.append(course_id)
+    if status and status != 'All':
+        query += ' AND a.status = ?'
+        params.append(status)
+
+    query += ' ORDER BY a.session_date DESC, a.id DESC LIMIT ?'
+    params.append(limit)
+
+    logs = conn.execute(query, params).fetchall()
+    conn.close()
+    return logs
+
+def mark_attendance(course_id, status='Present', session_topic=None, remarks=None, session_date=None):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    date_str = session_date or datetime.now().strftime('%Y-%m-%d')
+    topic = session_topic or 'Live Class Lecture Session'
+    rem = remarks or ('Marked via portal' if status == 'Present' else 'Reported absence')
+
+    cursor.execute('''
+        INSERT INTO attendance_records (course_id, session_date, session_topic, status, remarks)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (course_id, date_str, topic, status, rem))
+
+    course = cursor.execute('SELECT code, title FROM courses WHERE id = ?', (course_id,)).fetchone()
+    if course:
+        cursor.execute('''
+            INSERT INTO activities (activity_type, title, description, timestamp, icon_name)
+            VALUES (?, ?, ?, ?, ?)
+        ''', ('attendance_marked', f"Attendance Logged: {course['code']}",
+              f"Marked as '{status}' for {course['title']} ({topic}).",
+              datetime.now().strftime('%Y-%m-%d %H:%M'), 'check-square'))
+
+    conn.commit()
+    conn.close()
+    return True
+
+# ==============================================================================
+# Feedback & Reviews Management
+# ==============================================================================
+
+def get_feedbacks(category=None, min_rating=None, search=None):
+    conn = get_db_connection()
+    query = 'SELECT * FROM feedback_submissions WHERE 1=1'
+    params = []
+
+    if category and category != 'All':
+        query += ' AND category = ?'
+        params.append(category)
+    if min_rating and min_rating != 'All':
+        query += ' AND rating >= ?'
+        params.append(int(min_rating))
+    if search:
+        query += ' AND (target_name LIKE ? OR review_title LIKE ? OR review_text LIKE ? OR author_name LIKE ?)'
+        sp = f'%{search}%'
+        params.extend([sp, sp, sp, sp])
+
+    query += ' ORDER BY id DESC'
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    return rows
+
+def get_feedback_stats():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    total_count = cursor.execute('SELECT COUNT(*) FROM feedback_submissions').fetchone()[0]
+    avg_rating = cursor.execute('SELECT AVG(rating) FROM feedback_submissions').fetchone()[0] or 5.0
+    positive_count = cursor.execute("SELECT COUNT(*) FROM feedback_submissions WHERE sentiment = 'Positive'").fetchone()[0]
+
+    pct_positive = round((positive_count / total_count * 100), 1) if total_count > 0 else 100.0
+
+    conn.close()
+    return {
+        'total_count': total_count,
+        'avg_rating': round(avg_rating, 1),
+        'positive_count': positive_count,
+        'pct_positive': pct_positive,
+        'curriculum_sat': '97%',
+        'placements_sat': '95%',
+        'faculty_sat': '98%'
+    }
+
+def submit_feedback(category, target_name, rating, review_title, review_text, author_name='Ajay Reddy', is_anonymous=0, sentiment='Positive'):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    created_at = datetime.now().strftime('%Y-%m-%d %H:%M')
+    name_to_record = 'Anonymous Student' if is_anonymous else (author_name or 'Ajay Reddy')
+
+    cursor.execute('''
+        INSERT INTO feedback_submissions (
+            category, target_name, rating, review_title, review_text, author_name,
+            is_anonymous, created_at, upvotes, sentiment
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+    ''', (category, target_name, int(rating), review_title, review_text, name_to_record, int(is_anonymous), created_at, sentiment))
+
+    cursor.execute('''
+        INSERT INTO activities (activity_type, title, description, timestamp, icon_name)
+        VALUES (?, ?, ?, ?, ?)
+    ''', ('feedback_submitted', 'Review Submitted',
+          f"Feedback posted for {target_name} ({rating}/5 Stars).",
+          created_at, 'star'))
+
+    conn.commit()
+    conn.close()
+    return True
+
+def upvote_feedback(feedback_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE feedback_submissions SET upvotes = upvotes + 1 WHERE id = ?', (feedback_id,))
+    new_votes = cursor.execute('SELECT upvotes FROM feedback_submissions WHERE id = ?', (feedback_id,)).fetchone()
+    conn.commit()
+    conn.close()
+    return new_votes['upvotes'] if new_votes else 0
+
