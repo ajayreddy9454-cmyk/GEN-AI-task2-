@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     toast.innerHTML = `
       <i data-lucide="${iconName}" style="color: ${type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#4f46e5')}; width: 18px; height: 18px;"></i>
-      <span style="font-size: 0.85rem; font-weight: 600; color: #1e293b; flex: 1;">${message}</span>
+      <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); flex: 1;">${message}</span>
     `;
 
     container.appendChild(toast);
@@ -260,14 +260,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Append User message
     const userMsg = document.createElement('div');
-    userMsg.style.cssText = 'background: #4f46e5; color: white; padding: 0.75rem 1rem; border-radius: 12px 12px 2px 12px; margin-bottom: 0.85rem; max-width: 85%; margin-left: auto; font-size: 0.86rem;';
+    userMsg.style.cssText = 'background: var(--primary); color: white; padding: 0.75rem 1rem; border-radius: 12px 12px 2px 12px; margin-bottom: 0.85rem; max-width: 85%; margin-left: auto; font-size: 0.86rem;';
     userMsg.textContent = query;
     chatContainer.appendChild(userMsg);
 
     // Append Loading skeleton
     const loadingMsg = document.createElement('div');
     loadingMsg.id = 'aiLoadingIndicator';
-    loadingMsg.style.cssText = 'background: #f1f5f9; color: #475569; padding: 0.75rem 1rem; border-radius: 12px 12px 12px 2px; margin-bottom: 0.85rem; max-width: 85%; font-size: 0.85rem; font-style: italic;';
+    loadingMsg.style.cssText = 'background: var(--bg-subtle); color: var(--text-muted); border: 1px solid var(--border-light); padding: 0.75rem 1rem; border-radius: 12px 12px 12px 2px; margin-bottom: 0.85rem; max-width: 85%; font-size: 0.85rem; font-style: italic;';
     loadingMsg.innerHTML = '<span class="demo-indicator"></span> Consulting academic model...';
     chatContainer.appendChild(loadingMsg);
     chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadingMsg.remove();
 
       const aiMsg = document.createElement('div');
-      aiMsg.style.cssText = 'background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; padding: 1rem; border-radius: 12px 12px 12px 2px; margin-bottom: 0.85rem; max-width: 90%; font-size: 0.86rem; line-height: 1.6; box-shadow: 0 1px 3px rgba(0,0,0,0.05);';
+      aiMsg.style.cssText = 'background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text-main); padding: 1rem; border-radius: 12px 12px 12px 2px; margin-bottom: 0.85rem; max-width: 90%; font-size: 0.86rem; line-height: 1.6; box-shadow: var(--shadow-sm);';
       // Simple format conversion for line breaks and bullet points
       aiMsg.innerHTML = data.answer.replace(/\n\n/g, '<br><br>').replace(/•/g, '&bull;');
       chatContainer.appendChild(aiMsg);

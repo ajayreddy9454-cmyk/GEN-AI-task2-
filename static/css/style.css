@@ -429,7 +429,7 @@ button, input, select, textarea {
 }
 
 .demo-mode-card {
-  background: white;
+  background: var(--bg-surface);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: 0.85rem;
@@ -549,7 +549,8 @@ button, input, select, textarea {
 .header-search input:focus {
   outline: none;
   border-color: var(--primary);
-  background: white;
+  background: var(--bg-surface);
+  color: var(--text-main);
   box-shadow: 0 0 0 3px var(--primary-subtle);
 }
 
@@ -591,7 +592,7 @@ button, input, select, textarea {
 
 .notification-btn {
   position: relative;
-  background: white;
+  background: var(--bg-surface);
   border: 1px solid var(--border-light);
   width: 38px;
   height: 38px;
@@ -618,7 +619,7 @@ button, input, select, textarea {
   height: 9px;
   background-color: var(--danger);
   border-radius: 50%;
-  border: 2px solid white;
+  border: 2px solid var(--bg-surface);
 }
 
 .notification-dropdown {
@@ -626,7 +627,8 @@ button, input, select, textarea {
   top: calc(100% + 10px);
   right: 0;
   width: 340px;
-  background: white;
+  background: var(--bg-surface);
+  color: var(--text-main);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
@@ -678,7 +680,7 @@ button, input, select, textarea {
 }
 
 .notif-item.unread {
-  background-color: #f8faff;
+  background-color: var(--primary-subtle);
 }
 
 .notif-title {
@@ -708,7 +710,7 @@ button, input, select, textarea {
   padding: 0.35rem 0.75rem 0.35rem 0.4rem;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-light);
-  background: white;
+  background: var(--bg-surface);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
@@ -878,9 +880,9 @@ button, input, select, textarea {
 }
 
 .btn-secondary {
-  background-color: white;
+  background-color: var(--bg-surface);
   color: var(--text-main);
-  border-color: var(--border-light);
+  border: 1px solid var(--border-light);
 }
 
 .btn-secondary:hover {
@@ -1056,7 +1058,7 @@ button, input, select, textarea {
   font-size: 0.76rem;
   font-weight: 700;
   color: var(--primary);
-  background: white;
+  background: var(--bg-surface);
   padding: 0.25rem 0.6rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-light);
@@ -1115,27 +1117,27 @@ button, input, select, textarea {
 }
 
 .badge-priority-high {
-  background-color: #fee2e2;
-  color: #b91c1c;
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
   font-weight: 700;
   font-size: 0.7rem;
-  border: 1px solid #fca5a5;
+  border: 1px solid var(--danger-border);
 }
 
 .badge-priority-medium {
-  background-color: #fef3c7;
-  color: #b45309;
+  background-color: var(--warning-bg);
+  color: var(--warning-text);
   font-weight: 600;
   font-size: 0.7rem;
-  border: 1px solid #fde68a;
+  border: 1px solid var(--warning-border);
 }
 
 .badge-priority-low {
-  background-color: #e0f2fe;
-  color: #0369a1;
+  background-color: var(--info-bg);
+  color: var(--info-text);
   font-weight: 600;
   font-size: 0.7rem;
-  border: 1px solid #bae6fd;
+  border: 1px solid var(--info-border);
 }
 
 /* Course Cards */
@@ -1266,7 +1268,7 @@ button, input, select, textarea {
 }
 
 .assignment-item:hover {
-  background-color: #fafbfd;
+  background-color: var(--bg-hover);
   border-color: var(--border-subtle);
   box-shadow: var(--shadow-xs);
 }
@@ -1456,12 +1458,15 @@ button, input, select, textarea {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   background-color: var(--bg-app);
+  color: var(--text-main);
 }
 
 .filter-search-box input:focus {
   outline: none;
   border-color: var(--primary);
-  background: white;
+  background-color: var(--bg-surface);
+  color: var(--text-main);
+  box-shadow: 0 0 0 3px var(--primary-subtle);
 }
 
 .filter-search-box i, .filter-search-box svg {
@@ -1492,7 +1497,7 @@ button, input, select, textarea {
   font-size: 0.88rem;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  background-color: white;
+  background-color: var(--bg-app);
   color: var(--text-main);
   transition: all var(--transition-fast);
 }
@@ -1500,12 +1505,49 @@ button, input, select, textarea {
 .form-control:focus {
   outline: none;
   border-color: var(--primary);
+  background-color: var(--bg-surface);
+  color: var(--text-main);
   box-shadow: 0 0 0 3px var(--primary-subtle);
+}
+
+.form-control::placeholder {
+  color: var(--text-subtle);
+  opacity: 0.85;
+}
+
+.form-control option {
+  background-color: var(--bg-surface);
+  color: var(--text-main);
 }
 
 textarea.form-control {
   resize: vertical;
   min-height: 90px;
+}
+
+/* Chromium / WebKit & Autofill High-Contrast Protection */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-main) !important;
+  caret-color: var(--text-main) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-app) inset !important;
+  box-shadow: 0 0 0px 1000px var(--bg-app) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+[data-theme="cosmic"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="emerald"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="sunset"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85) brightness(1.2);
 }
 
 .form-row {
@@ -1605,7 +1647,8 @@ textarea.form-control {
   pointer-events: auto;
   min-width: 290px;
   max-width: 400px;
-  background: white;
+  background: var(--bg-surface);
+  color: var(--text-main);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: 0.85rem 1rem;
